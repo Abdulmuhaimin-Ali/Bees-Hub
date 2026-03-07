@@ -1,6 +1,8 @@
 import express from 'express'
 import cors from 'cors'
 import session from 'express-session'
+import 'dotenv/config'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 import path from 'path'
 import fs from 'fs'
 import {v4 as uuidv4} from 'uuid'
@@ -13,7 +15,7 @@ import router from './profile.js'
 const app = express()
 const port = 9000;
 
-// Initialize the database and schema
+// Initialize the database and schema and ai 
 (async () => {
   try {
     await getDb(); 
@@ -24,6 +26,7 @@ const port = 9000;
   }
 })();
 
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 app.use(cors({
   origin: 'http://localhost:5173',
@@ -90,6 +93,41 @@ app.post('/api/auth/logout', (req, res) => {
 
 // profile routes
 app.use('/api/profiles', router);
+
+// Matching
+// in this function I want to make a request to 
+app.get('/api/matches', requireMember, async (req, res) => {
+  // get user profile.
+
+  // get others profiles 
+
+  // send it to ai agent
+  const model = genAI.getGenerativeModel({model: 'gemini-2.5-flash'});
+
+  const prompt = `
+      You are a matchmaking assistant. Based on the current user's profile, 
+      recommend the best matching users from the list below.
+
+      Current user:
+      ${JSON.stringify(currentUser, null, 2)}
+
+      Other users:
+      ${JSON.stringify(otherUsers.map(u => ({ id: u._id, ...u.toObject() })), null, 2)}
+
+      Return ONLY a JSON array of user IDs (strings) in order of best match, like:
+      ["id1", "id2", "id3"]
+      No explanation, no markdown, just the raw JSON array.
+    `;
+
+    const result = await model.generateContent(prompt);
+    const text = result.response.text().trim();
+
+    const recommendedIds = JSON.parse(text);
+
+  // return list of users with those ids
+
+
+})
 
 
 app.listen(port, () => {
