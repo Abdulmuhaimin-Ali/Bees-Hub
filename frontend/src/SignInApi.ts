@@ -77,7 +77,6 @@ export interface Profile {
   preferred_age_max?: number;
   relationship_type?: string;
   interests?: string;
-  deal_breakers?: string;
 }
 
 export async function getAllProfiles() {

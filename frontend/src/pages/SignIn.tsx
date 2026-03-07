@@ -1,26 +1,12 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Eye, EyeOff, ArrowRight } from "lucide-react";
-import { login } from "../api";
 import "./SignIn.css";
 
 export default function SignIn() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const navigate = useNavigate();
-
-  const handleSignIn = async () => {
-    setError("");
-    try {
-      const { user } = await login(email, password);
-      console.log("Login successful:", user);
-      navigate("/discover");
-    } catch (err: any) {
-      setError(err.message);
-    }
-  };
 
   return (
     <div className="signin-page">
@@ -61,11 +47,9 @@ export default function SignIn() {
             </div>
           </div>
 
-          {error && <p className="signin-error" style={{ color: "red" }}>{error}</p>}
-
-          <button className="btn-signin" onClick={handleSignIn}>
+          <Link to="/discover" className="btn-signin">
             Sign In <ArrowRight size={18} />
-          </button>
+          </Link>
         </div>
 
         <p className="signup-link">
