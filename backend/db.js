@@ -1,7 +1,11 @@
 import initSqlJs from 'sql.js'
 import fs from 'fs'
 import path from 'path'
+import {fileURLToPath} from 'url'
 
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const DB_PATH = path.join(__dirname, 'itconnect.db');
 let db;
@@ -50,7 +54,7 @@ function initSchema() {
       weight_kg INTEGER,
       age INTEGER,
       gender TEXT,
-      photo_url TEXT,
+      photo_url TEXTa,
       bio TEXT,
       -- Professional
       job_title TEXT,
@@ -108,12 +112,14 @@ function initSchema() {
   saveDb();
 }
 
-function run(sql, params = []) {
+async function run(sql, params = []) {
+  if (!db) await getDb();
   db.run(sql, params);
   saveDb();
 }
 
-function get(sql, params = []) {
+async function get(sql, params = []) {
+  if (!db) await getDb();
   const stmt = db.prepare(sql);
   stmt.bind(params);
   if (stmt.step()) {
@@ -125,7 +131,8 @@ function get(sql, params = []) {
   return null;
 }
 
-function all(sql, params = []) {
+async function all(sql, params = []) {
+  if (!db) await getDb();
   const stmt = db.prepare(sql);
   stmt.bind(params);
   const rows = [];
@@ -136,4 +143,4 @@ function all(sql, params = []) {
   return rows;
 }
 
-module.exports = { getDb, run, get, all, saveDb };
+ export { getDb, run, get, all, saveDb };
