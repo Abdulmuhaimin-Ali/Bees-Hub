@@ -1,12 +1,12 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Eye, EyeOff, ArrowRight } from 'lucide-react';
-import './SignIn.css';
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { Eye, EyeOff, ArrowRight } from "lucide-react";
+import "./SignIn.css";
 
 export default function SignIn() {
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   return (
     <div className="signin-page">
@@ -24,7 +24,7 @@ export default function SignIn() {
               type="email"
               placeholder="john@example.com"
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
             />
           </div>
 
@@ -32,10 +32,10 @@ export default function SignIn() {
             <label>Password</label>
             <div className="password-input">
               <input
-                type={showPassword ? 'text' : 'password'}
+                type={showPassword ? "text" : "password"}
                 placeholder="Enter your password"
                 value={password}
-                onChange={e => setPassword(e.target.value)}
+                onChange={(e) => setPassword(e.target.value)}
               />
               <button
                 type="button"

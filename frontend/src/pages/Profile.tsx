@@ -1,33 +1,49 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Camera, Edit3, MapPin, Briefcase, Heart, Sparkles, LogOut } from 'lucide-react';
-import './Profile.css';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Camera,
+  Edit3,
+  MapPin,
+  Briefcase,
+  Heart,
+  Sparkles,
+  LogOut,
+} from "lucide-react";
+import "./Profile.css";
 
 const INTERESTS = [
-  'Hiking', 'Cooking', 'Gaming', 'Photography', 'Travel',
-  'Music', 'Fitness', 'Reading', 'Coffee', 'Coding',
+  "Hiking",
+  "Cooking",
+  "Gaming",
+  "Photography",
+  "Travel",
+  "Music",
+  "Fitness",
+  "Reading",
+  "Coffee",
+  "Coding",
 ];
 
 export default function Profile() {
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
   const [profile, setProfile] = useState({
-    firstName: 'Alex',
-    lastName: 'Chen',
+    firstName: "Alex",
+    lastName: "Chen",
     age: 28,
-    location: 'Toronto, ON',
-    occupation: 'Full-Stack Developer',
-    company: 'Shopify',
-    bio: 'Passionate developer who loves building things and exploring the outdoors. Looking for someone who shares my love for adventure and good coffee.',
-    relationshipGoal: 'Long-term',
-    interests: ['Coding', 'Hiking', 'Coffee', 'Photography', 'Travel'],
+    location: "Toronto, ON",
+    occupation: "Full-Stack Developer",
+    company: "Shopify",
+    bio: "Passionate developer who loves building things and exploring the outdoors. Looking for someone who shares my love for adventure and good coffee.",
+    relationshipGoal: "Long-term",
+    interests: ["Coding", "Hiking", "Coffee", "Photography", "Travel"],
   });
 
   const toggleInterest = (interest: string) => {
-    setProfile(prev => ({
+    setProfile((prev) => ({
       ...prev,
       interests: prev.interests.includes(interest)
-        ? prev.interests.filter(i => i !== interest)
+        ? prev.interests.filter((i) => i !== interest)
         : [...prev.interests, interest],
     }));
   };
@@ -42,17 +58,24 @@ export default function Profile() {
           <div className="avatar-wrapper">
             <div className="avatar">
               <span className="avatar-initials">
-                {profile.firstName[0]}{profile.lastName[0]}
+                {profile.firstName[0]}
+                {profile.lastName[0]}
               </span>
             </div>
             <button className="avatar-edit">
               <Camera size={16} />
             </button>
           </div>
-          <h1 className="profile-name">{profile.firstName} {profile.lastName}, {profile.age}</h1>
+          <h1 className="profile-name">
+            {profile.firstName} {profile.lastName}, {profile.age}
+          </h1>
           <div className="profile-meta">
-            <span><MapPin size={14} /> {profile.location}</span>
-            <span><Briefcase size={14} /> {profile.occupation}</span>
+            <span>
+              <MapPin size={14} /> {profile.location}
+            </span>
+            <span>
+              <Briefcase size={14} /> {profile.occupation}
+            </span>
           </div>
         </div>
 
@@ -77,7 +100,9 @@ export default function Profile() {
             <textarea
               className="bio-edit"
               value={profile.bio}
-              onChange={e => setProfile(prev => ({ ...prev, bio: e.target.value }))}
+              onChange={(e) =>
+                setProfile((prev) => ({ ...prev, bio: e.target.value }))
+              }
               rows={4}
             />
           ) : (
@@ -120,10 +145,10 @@ export default function Profile() {
             </button>
           </div>
           <div className="profile-interests">
-            {(editing ? INTERESTS : profile.interests).map(interest => (
+            {(editing ? INTERESTS : profile.interests).map((interest) => (
               <button
                 key={interest}
-                className={`interest-tag ${profile.interests.includes(interest) ? 'active' : ''}`}
+                className={`interest-tag ${profile.interests.includes(interest) ? "active" : ""}`}
                 onClick={() => editing && toggleInterest(interest)}
               >
                 {interest}
@@ -138,7 +163,7 @@ export default function Profile() {
             <h3>Photos</h3>
           </div>
           <div className="photos-grid">
-            {[0, 1, 2, 3, 4, 5].map(i => (
+            {[0, 1, 2, 3, 4, 5].map((i) => (
               <label key={i} className="photo-upload-slot">
                 <input type="file" accept="image/*" hidden />
                 <div className="photo-upload-placeholder">
@@ -150,12 +175,15 @@ export default function Profile() {
         </div>
 
         {editing && (
-          <button className="save-profile-btn" onClick={() => setEditing(false)}>
+          <button
+            className="save-profile-btn"
+            onClick={() => setEditing(false)}
+          >
             Save Changes
           </button>
         )}
 
-        <button className="sign-out-btn" onClick={() => navigate('/')}>
+        <button className="sign-out-btn" onClick={() => navigate("/")}>
           <LogOut size={18} />
           Sign Out
         </button>
