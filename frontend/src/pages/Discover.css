@@ -144,10 +144,32 @@
 
 /* Action Buttons */
 .action-buttons {
+  position: relative;
+  z-index: 3;
   display: flex;
   justify-content: center;
   gap: 2rem;
   margin-top: 1.5rem;
+  padding-bottom: 2rem;
+}
+
+@media (max-width: 767px) {
+  .profile-card-stack {
+    height: auto;
+    min-height: 400px;
+  }
+
+  .card-avatar {
+    height: 180px;
+  }
+
+  .profile-card {
+    position: relative;
+  }
+
+  .next-card {
+    display: none;
+  }
 }
 
 .action-btn {

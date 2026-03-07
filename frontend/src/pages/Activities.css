@@ -23,6 +23,20 @@
   margin: 0;
 }
 
+@media (max-width: 767px) {
+  .activities-header {
+    text-align: center;
+  }
+
+  .activities-header h1 {
+    font-size: 1.3rem;
+  }
+
+  .activities-header p {
+    font-size: 0.82rem;
+  }
+}
+
 /* Availability */
 .availability-section {
   margin-bottom: 1.25rem;
@@ -190,14 +204,18 @@
 .activity-top {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.5rem;
 }
 
 .activity-top h3 {
-  font-size: 1rem;
+  font-size: 0.95rem;
   color: #1f2937;
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .match-badge {
@@ -208,6 +226,7 @@
   color: #059669;
   font-size: 0.75rem;
   font-weight: 600;
+  flex-shrink: 0;
   padding: 0.2rem 0.6rem;
   border-radius: 2rem;
   white-space: nowrap;
@@ -216,7 +235,7 @@
 .activity-category {
   display: inline-block;
   font-size: 0.75rem;
-  color: #9ca3af;
+  color: #af9c9c;
   margin-top: 0.15rem;
 }
 
