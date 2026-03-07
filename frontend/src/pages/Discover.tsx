@@ -6,7 +6,7 @@ interface MatchProfile {
   id: number;
   name: string;
   age: number;
-  location: string;
+  location: string | null;
   occupation: string;
   bio: string;
   interests: string[];
@@ -17,7 +17,7 @@ interface MatchProfile {
 
 const PROFILES: MatchProfile[] = [
   {
-    id: 1, name: 'Sarah Kim', age: 26, location: 'Toronto, ON',
+    id: 1, name: 'Sarah Kim', age: 26, location: null,
     occupation: 'UX Designer at Meta', initials: 'SK',
     bio: 'Creative soul who loves designing beautiful things and exploring hidden cafés.',
     interests: ['Coffee', 'Art', 'Hiking', 'Photography'],
@@ -59,6 +59,10 @@ export default function Discover() {
       setSwipeDirection(null);
     }, 300);
   };
+  
+  const orNothing = (profileField: any, prop: React.JSX.IntrinsicElements ) => {
+    return profileField === null ? "" : prop
+  }
 
   if (!currentProfile) {
     return (
@@ -82,7 +86,8 @@ export default function Discover() {
           <p>Find your perfect match</p>
         </div>
 
-        <div className={`profile-card-stack ${swipeDirection ? `swiping-${swipeDirection}` : ''}`}>
+        {/* TODO: shows profiles based on swip direction */}
+        <div className={`profile-card-stack ${profiles.length > 1 ? `swiping-${swipeDirection}` : ''}`}>
           {/* Next card (behind) */}
           {profiles[1] && (
             <div className="profile-card next-card">
@@ -106,7 +111,8 @@ export default function Discover() {
                 </div>
               </div>
               <div className="card-meta">
-                <span><MapPin size={14} /> {currentProfile.location}</span>
+                { currentProfile.location ? <span><MapPin size={14} /> {currentProfile.location}</span> : <span></span>}
+                {/*<span><MapPin size={14} /> {currentProfile.location}</span>*/}
                 <span><Briefcase size={14} /> {currentProfile.occupation}</span>
               </div>
               <p className="card-bio">{currentProfile.bio}</p>
