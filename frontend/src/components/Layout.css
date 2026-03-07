@@ -1,0 +1,16 @@
+.app-layout {
+  min-height: 100vh;
+  background: #fafafa;
+}
+
+.main-content {
+  padding-bottom: 5rem; /* space for mobile nav */
+  min-height: 100vh;
+}
+
+@media (min-width: 768px) {
+  .main-content {
+    padding-top: 5rem; /* space for top nav */
+    padding-bottom: 2rem;
+  }
+}
