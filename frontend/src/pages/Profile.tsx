@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Camera,
@@ -15,6 +15,7 @@ import {
   DollarSign,
   Target,
 } from "lucide-react";
+import { getProfile, saveProfile } from "../api/SignInApi";
 import "./Profile.css";
 
 const INTERESTS = [
@@ -55,36 +56,133 @@ const TECH_SKILLS_LIST = [
 export default function Profile() {
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState({
-    firstName: "Alex",
-    lastName: "Chen",
-    age: 28,
-    dateOfBirth: "1998-03-15",
-    gender: "Man",
-    phone: "(416) 555-0199",
-    address: "123 Queen St W",
-    city: "Toronto",
-    province: "ON",
-    postalCode: "M5V 2H1",
-    occupation: "Full-Stack Developer",
-    company: "Shopify",
-    workType: "Hybrid",
-    salaryRange: "$120k - $180k",
-    yearsExperience: "5 - 10",
-    education: "Bachelor's",
-    certifications: "AWS Solutions Architect",
-    techSkills: ["TypeScript", "React", "Node.js", "AWS", "Docker"],
-    heightCm: "178",
-    weightKg: "75",
-    bio: "Passionate developer who loves building things and exploring the outdoors. Looking for someone who shares my love for adventure and good coffee.",
-    lookingFor: "Adventurous, curious, and a bit nerdy",
-    relationshipType: "Long-term",
-    preferredGender: "Women",
-    preferredAgeMin: "24",
-    preferredAgeMax: "32",
-    dealBreakers: "Smoking, dishonesty",
-    interests: ["Coding", "Hiking", "Coffee", "Photography", "Travel"],
+    firstName: "",
+    lastName: "",
+    age: 0,
+    dateOfBirth: "",
+    gender: "",
+    phone: "",
+    address: "",
+    city: "",
+    province: "",
+    postalCode: "",
+    occupation: "",
+    company: "",
+    workType: "",
+    salaryRange: "",
+    yearsExperience: "",
+    education: "",
+    certifications: "",
+    techSkills: [] as string[],
+    heightCm: "",
+    weightKg: "",
+    bio: "",
+    lookingFor: "",
+    relationshipType: "",
+    preferredGender: "",
+    preferredAgeMin: "",
+    preferredAgeMax: "",
+    dealBreakers: "",
+    interests: [] as string[],
   });
+
+  useEffect(() => {
+    const stored = localStorage.getItem("user");
+    if (!stored) {
+      navigate("/");
+      return;
+    }
+    const user = JSON.parse(stored);
+    getProfile(user.id)
+      .then((p) => {
+        setProfile({
+          firstName: p.first_name ?? "",
+          lastName: p.last_name ?? "",
+          age: p.date_of_birth
+            ? Math.floor(
+                (Date.now() - new Date(p.date_of_birth).getTime()) /
+                  (365.25 * 24 * 60 * 60 * 1000),
+              )
+            : 0,
+          dateOfBirth: p.date_of_birth ?? "",
+          gender: p.gender ?? "",
+          phone: p.phone ?? "",
+          address: p.address ?? "",
+          city: p.city ?? "",
+          province: p.province ?? "",
+          postalCode: p.postal_code ?? "",
+          occupation: p.job_title ?? "",
+          company: p.employer ?? "",
+          workType: p.work_type ?? "",
+          salaryRange: p.salary_range ?? "",
+          yearsExperience: p.years_experience?.toString() ?? "",
+          education: p.education ?? "",
+          certifications: p.certifications ?? "",
+          techSkills: p.tech_skills
+            ? p.tech_skills.split(",").map((s) => s.trim())
+            : [],
+          heightCm: p.height_cm?.toString() ?? "",
+          weightKg: p.weight_kg?.toString() ?? "",
+          bio: p.bio ?? "",
+          lookingFor: p.looking_for ?? "",
+          relationshipType: p.relationship_type ?? "",
+          preferredGender: p.preferred_gender ?? "",
+          preferredAgeMin: p.preferred_age_min?.toString() ?? "",
+          preferredAgeMax: p.preferred_age_max?.toString() ?? "",
+          dealBreakers: "",
+          interests: p.interests
+            ? p.interests.split(",").map((s) => s.trim())
+            : [],
+        });
+      })
+      .catch(() => {
+        console.log("No profile yet — showing blank form");
+      })
+      .finally(() => setLoading(false));
+  }, [navigate]);
+
+  const handleSave = async () => {
+    const stored = localStorage.getItem("user");
+    if (!stored) return;
+    const user = JSON.parse(stored);
+    await saveProfile(user.id, {
+      first_name: profile.firstName,
+      last_name: profile.lastName,
+      date_of_birth: profile.dateOfBirth,
+      gender: profile.gender,
+      phone: profile.phone,
+      address: profile.address,
+      city: profile.city,
+      province: profile.province,
+      postal_code: profile.postalCode,
+      job_title: profile.occupation,
+      employer: profile.company,
+      work_type: profile.workType,
+      salary_range: profile.salaryRange,
+      years_experience: profile.yearsExperience
+        ? Number(profile.yearsExperience)
+        : undefined,
+      education: profile.education,
+      certifications: profile.certifications,
+      tech_skills: profile.techSkills.join(", "),
+      height_cm: profile.heightCm ? Number(profile.heightCm) : undefined,
+      weight_kg: profile.weightKg ? Number(profile.weightKg) : undefined,
+      bio: profile.bio,
+      looking_for: profile.lookingFor,
+      relationship_type: profile.relationshipType,
+      preferred_gender: profile.preferredGender,
+      preferred_age_min: profile.preferredAgeMin
+        ? Number(profile.preferredAgeMin)
+        : undefined,
+      preferred_age_max: profile.preferredAgeMax
+        ? Number(profile.preferredAgeMax)
+        : undefined,
+      interests: profile.interests.join(", "),
+    });
+    setEditing(false);
+  };
 
   const toggleInterest = (interest: string) => {
     setProfile((prev) => ({
@@ -106,6 +204,19 @@ export default function Profile() {
 
   const location = `${profile.city}, ${profile.province}`;
 
+  if (loading) {
+    return (
+      <div className="profile-page">
+        <div
+          className="profile-content"
+          style={{ textAlign: "center", padding: "4rem" }}
+        >
+          <p>Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="profile-page">
       <div className="profile-header-bg" />
@@ -125,7 +236,7 @@ export default function Profile() {
             </button>
           </div>
           <h1 className="profile-name">
-            {profile.firstName} {profile.lastName}, {profile.age}
+            {profile.firstName} {profile.lastName}
           </h1>
           <div className="profile-meta">
             <span>
@@ -150,7 +261,7 @@ export default function Profile() {
           {/* Bio */}
           <div className="profile-card">
             <div className="card-header">
-              <h3>About Me</h3>
+              <h3>Bio</h3>
               <button className="edit-btn" onClick={() => setEditing(!editing)}>
                 <Edit3 size={16} />
               </button>
@@ -355,15 +466,18 @@ export default function Profile() {
         </div>
 
         {editing && (
-          <button
-            className="save-profile-btn"
-            onClick={() => setEditing(false)}
-          >
+          <button className="save-profile-btn" onClick={handleSave}>
             Save Changes
           </button>
         )}
 
-        <button className="sign-out-btn" onClick={() => navigate("/")}>
+        <button
+          className="sign-out-btn"
+          onClick={() => {
+            localStorage.removeItem("user");
+            navigate("/");
+          }}
+        >
           <LogOut size={18} />
           Sign Out
         </button>

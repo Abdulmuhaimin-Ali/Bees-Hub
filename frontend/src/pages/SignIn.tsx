@@ -16,6 +16,7 @@ export default function SignIn() {
     try {
       const { user } = await login(email, password);
       console.log("Login successful:", user);
+      localStorage.setItem("user", JSON.stringify(user));
       navigate("/discover");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login failed");
