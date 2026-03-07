@@ -82,10 +82,6 @@ export default function Discover() {
     }, 300);
   };
   
-  const orNothing = (profileField: any, prop: React.JSX.IntrinsicElements ) => {
-    return profileField === null ? "" : prop
-  }
-
   if (!currentProfile) {
     return (
       <div className="discover-page">
