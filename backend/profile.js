@@ -1,9 +1,10 @@
 import express from 'express'
-import * as db from './db'
+import * as db from './db.js'
 const router = express.Router();
 import path from 'path'
 import multer from 'multer'
-import fs from 'fs'
+import {getDb, run, get, all} from './db.js'
+
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, path.join(__dirname, './uploads')),
@@ -11,36 +12,36 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
-// Get all profiles (public - for browsing, non-members can view)
-router.get('/', (req, res) => {
-  try {
-    const profiles = db.prepare(`
-      SELECT p.*, u.email, u.is_member
-      FROM profiles p
-      JOIN users u ON p.user_id = u.id
-      ORDER BY p.updated_at DESC
-    `).all();
-    res.json(profiles);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Get single profile
-router.get('/:userId', (req, res) => {
-  try {
-    const profile = db.prepare(`
-      SELECT p.*, u.email, u.is_member
-      FROM profiles p
-      JOIN users u ON p.user_id = u.id
-      WHERE p.user_id = ?
-    `).get(req.params.userId);
-    if (!profile) return res.status(404).json({ error: 'Profile not found' });
-    res.json(profile);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// Get all profiles
+router.get('/', async (req, res) => {
+    try {
+      const profiles = await all(`
+        SELECT p.*, u.email, u.is_member
+        FROM profiles p
+        JOIN users u ON p.user_id = u.id
+      `);
+      res.json(profiles);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  
+  // Get single profile
+  router.get('/:userId', async (req, res) => {
+    try {
+      const profile = await get(`
+        SELECT p.*, u.email, u.is_member
+        FROM profiles p
+        JOIN users u ON p.user_id = u.id
+        WHERE p.user_id = ?
+      `, [req.params.userId]);
+  
+      if (!profile) return res.status(404).json({ error: 'Profile not found' });
+      res.json(profile);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
 
 // Create or update profile
 router.post('/:userId', (req, res) => {
@@ -77,23 +78,23 @@ router.post('/:userId', (req, res) => {
   }
 });
 
-// Upload photo
-router.post('/:userId/photo', upload.single('photo'), (req, res) => {
-  const { userId } = req.params;
-  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+// // Upload photo
+// router.post('/:userId/photo', upload.single('photo'), (req, res) => {
+//   const { userId } = req.params;
+//   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
-  try {
-    const photoUrl = `/uploads/${req.file.filename}`;
-    const existing = db.prepare('SELECT id FROM profiles WHERE user_id = ?').get(userId);
-    if (existing) {
-      db.prepare('UPDATE profiles SET photo_url = ? WHERE user_id = ?').run(photoUrl, userId);
-    } else {
-      db.prepare('INSERT INTO profiles (user_id, photo_url) VALUES (?, ?)').run(userId, photoUrl);
-    }
-    res.json({ photo_url: photoUrl });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+//   try {
+//     const photoUrl = `/uploads/${req.file.filename}`;
+//     const existing = db.prepare('SELECT id FROM profiles WHERE user_id = ?').get(userId);
+//     if (existing) {
+//       db.prepare('UPDATE profiles SET photo_url = ? WHERE user_id = ?').run(photoUrl, userId);
+//     } else {
+//       db.prepare('INSERT INTO profiles (user_id, photo_url) VALUES (?, ?)').run(userId, photoUrl);
+//     }
+//     res.json({ photo_url: photoUrl });
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// });
 
-module.exports = router;
+export default router;
