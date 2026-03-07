@@ -1,6 +1,13 @@
-import { useState } from 'react';
-import { Send, Search, Phone, Video, MoreVertical, ArrowLeft } from 'lucide-react';
-import './Chat.css';
+import { useState } from "react";
+import {
+  Send,
+  Search,
+  Phone,
+  Video,
+  MoreVertical,
+  ArrowLeft,
+} from "lucide-react";
+import "./Chat.css";
 
 interface Conversation {
   id: number;
@@ -15,44 +22,124 @@ interface Conversation {
 interface Message {
   id: number;
   text: string;
-  sender: 'me' | 'them';
+  sender: "me" | "them";
   time: string;
 }
 
 const CONVERSATIONS: Conversation[] = [
-  { id: 1, name: 'Sarah K.', avatar: 'SK', lastMessage: "That hiking trail sounds amazing! Let's go this weekend?", time: '2m', unread: 2, online: true },
-  { id: 2, name: 'Maya P.', avatar: 'MP', lastMessage: 'I love that coffee place too ☕', time: '15m', unread: 0, online: true },
-  { id: 3, name: 'Emily R.', avatar: 'ER', lastMessage: 'Great chatting with you!', time: '1h', unread: 0, online: false },
-  { id: 4, name: 'Jordan L.', avatar: 'JL', lastMessage: 'Have you tried the new ramen spot downtown?', time: '3h', unread: 1, online: false },
-  { id: 5, name: 'Taylor S.', avatar: 'TS', lastMessage: 'See you at the meetup!', time: '1d', unread: 0, online: false },
+  {
+    id: 1,
+    name: "Sarah K.",
+    avatar: "SK",
+    lastMessage: "That hiking trail sounds amazing! Let's go this weekend?",
+    time: "2m",
+    unread: 2,
+    online: true,
+  },
+  {
+    id: 2,
+    name: "Maya P.",
+    avatar: "MP",
+    lastMessage: "I love that coffee place too ☕",
+    time: "15m",
+    unread: 0,
+    online: true,
+  },
+  {
+    id: 3,
+    name: "Emily R.",
+    avatar: "ER",
+    lastMessage: "Great chatting with you!",
+    time: "1h",
+    unread: 0,
+    online: false,
+  },
+  {
+    id: 4,
+    name: "Jordan L.",
+    avatar: "JL",
+    lastMessage: "Have you tried the new ramen spot downtown?",
+    time: "3h",
+    unread: 1,
+    online: false,
+  },
+  {
+    id: 5,
+    name: "Taylor S.",
+    avatar: "TS",
+    lastMessage: "See you at the meetup!",
+    time: "1d",
+    unread: 0,
+    online: false,
+  },
 ];
 
 const MESSAGES: Record<number, Message[]> = {
   1: [
-    { id: 1, text: "Hey Alex! I saw we both love hiking 🏔️", sender: 'them', time: '10:30 AM' },
-    { id: 2, text: "Yes! It's my favourite weekend activity. Do you have a favourite trail?", sender: 'me', time: '10:32 AM' },
-    { id: 3, text: "I love the Bruce Trail! Have you been?", sender: 'them', time: '10:33 AM' },
-    { id: 4, text: "Not yet, but it's been on my list forever!", sender: 'me', time: '10:35 AM' },
-    { id: 5, text: "That hiking trail sounds amazing! Let's go this weekend?", sender: 'them', time: '10:36 AM' },
-    { id: 6, text: "I'd love that! Saturday morning work for you?", sender: 'them', time: '10:36 AM' },
+    {
+      id: 1,
+      text: "Hey Alex! I saw we both love hiking 🏔️",
+      sender: "them",
+      time: "10:30 AM",
+    },
+    {
+      id: 2,
+      text: "Yes! It's my favourite weekend activity. Do you have a favourite trail?",
+      sender: "me",
+      time: "10:32 AM",
+    },
+    {
+      id: 3,
+      text: "I love the Bruce Trail! Have you been?",
+      sender: "them",
+      time: "10:33 AM",
+    },
+    {
+      id: 4,
+      text: "Not yet, but it's been on my list forever!",
+      sender: "me",
+      time: "10:35 AM",
+    },
+    {
+      id: 5,
+      text: "That hiking trail sounds amazing! Let's go this weekend?",
+      sender: "them",
+      time: "10:36 AM",
+    },
+    {
+      id: 6,
+      text: "I'd love that! Saturday morning work for you?",
+      sender: "them",
+      time: "10:36 AM",
+    },
   ],
   2: [
-    { id: 1, text: "Your profile says you're into coffee - me too!", sender: 'me', time: '9:00 AM' },
-    { id: 2, text: 'I love that coffee place too ☕', sender: 'them', time: '9:15 AM' },
+    {
+      id: 1,
+      text: "Your profile says you're into coffee - me too!",
+      sender: "me",
+      time: "9:00 AM",
+    },
+    {
+      id: 2,
+      text: "I love that coffee place too ☕",
+      sender: "them",
+      time: "9:15 AM",
+    },
   ],
 };
 
 export default function Chat() {
   const [activeChat, setActiveChat] = useState<number | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [newMessage, setNewMessage] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [newMessage, setNewMessage] = useState("");
   const [messages, setMessages] = useState(MESSAGES);
 
-  const activeConvo = CONVERSATIONS.find(c => c.id === activeChat);
-  const currentMessages = activeChat ? (messages[activeChat] || []) : [];
+  const activeConvo = CONVERSATIONS.find((c) => c.id === activeChat);
+  const currentMessages = activeChat ? messages[activeChat] || [] : [];
 
-  const filteredConversations = CONVERSATIONS.filter(c =>
-    c.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredConversations = CONVERSATIONS.filter((c) =>
+    c.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const handleSend = () => {
@@ -60,20 +147,25 @@ export default function Chat() {
     const msg: Message = {
       id: Date.now(),
       text: newMessage,
-      sender: 'me',
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      sender: "me",
+      time: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
     };
-    setMessages(prev => ({
+    setMessages((prev) => ({
       ...prev,
       [activeChat]: [...(prev[activeChat] || []), msg],
     }));
-    setNewMessage('');
+    setNewMessage("");
   };
 
   return (
     <div className="chat-page">
       {/* Conversation List */}
-      <div className={`chat-sidebar ${activeChat !== null ? 'hidden-mobile' : ''}`}>
+      <div
+        className={`chat-sidebar ${activeChat !== null ? "hidden-mobile" : ""}`}
+      >
         <div className="chat-sidebar-header">
           <h2>Messages</h2>
         </div>
@@ -82,14 +174,14 @@ export default function Chat() {
           <input
             placeholder="Search conversations..."
             value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <div className="conversation-list">
-          {filteredConversations.map(convo => (
+          {filteredConversations.map((convo) => (
             <div
               key={convo.id}
-              className={`conversation-item ${activeChat === convo.id ? 'active' : ''}`}
+              className={`conversation-item ${activeChat === convo.id ? "active" : ""}`}
               onClick={() => setActiveChat(convo.id)}
             >
               <div className="convo-avatar-wrapper">
@@ -112,7 +204,9 @@ export default function Chat() {
       </div>
 
       {/* Chat Window */}
-      <div className={`chat-window ${activeChat === null ? 'hidden-mobile' : ''}`}>
+      <div
+        className={`chat-window ${activeChat === null ? "hidden-mobile" : ""}`}
+      >
         {activeChat === null ? (
           <div className="chat-empty">
             <span className="chat-empty-icon">💬</span>
@@ -129,18 +223,26 @@ export default function Chat() {
                 <div className="convo-avatar small">{activeConvo?.avatar}</div>
                 <div>
                   <span className="chat-user-name">{activeConvo?.name}</span>
-                  {activeConvo?.online && <span className="online-text">Online</span>}
+                  {activeConvo?.online && (
+                    <span className="online-text">Online</span>
+                  )}
                 </div>
               </div>
               <div className="chat-header-actions">
-                <button className="icon-btn"><Phone size={18} /></button>
-                <button className="icon-btn"><Video size={18} /></button>
-                <button className="icon-btn"><MoreVertical size={18} /></button>
+                <button className="icon-btn">
+                  <Phone size={18} />
+                </button>
+                <button className="icon-btn">
+                  <Video size={18} />
+                </button>
+                <button className="icon-btn">
+                  <MoreVertical size={18} />
+                </button>
               </div>
             </div>
 
             <div className="messages-area">
-              {currentMessages.map(msg => (
+              {currentMessages.map((msg) => (
                 <div key={msg.id} className={`message ${msg.sender}`}>
                   <div className="message-bubble">
                     <p>{msg.text}</p>
@@ -155,8 +257,8 @@ export default function Chat() {
                 type="text"
                 placeholder="Type a message..."
                 value={newMessage}
-                onChange={e => setNewMessage(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleSend()}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSend()}
               />
               <button
                 className="send-btn"

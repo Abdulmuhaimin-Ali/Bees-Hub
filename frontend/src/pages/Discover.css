@@ -30,7 +30,9 @@
 .profile-card-stack {
   position: relative;
   height: 480px;
-  transition: transform 0.3s ease, opacity 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    opacity 0.3s ease;
 }
 
 .profile-card-stack.swiping-left {
@@ -181,7 +183,9 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
