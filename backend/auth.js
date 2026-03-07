@@ -23,12 +23,12 @@ router.post('/register', async (req, res) => {
 });
 
 // Login
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
 
   try {
-    const user = db.prepare('SELECT id, email, password, is_member FROM users WHERE email = ?').get(email);
+    const user = await db.get('SELECT id, email, password, is_member FROM users WHERE email = ?', [email]);
     if (!user || user.password !== password) return res.status(401).json({ error: 'Invalid credentials' });
 
     const { password: _pw, ...safeUser } = user;
@@ -39,14 +39,16 @@ router.post('/login', (req, res) => {
 });
 
 // Simulate membership activation (no real payment)
-router.post('/activate-membership/:userId', (req, res) => {
+router.post('/activate-membership/:userId', async (req, res) => {
   const { userId } = req.params;
   try {
     const expires = new Date();
     expires.setMonth(expires.getMonth() + 1);
-    db.prepare('UPDATE users SET is_member = 1, membership_expires = ? WHERE id = ?').run(
-      expires.toISOString(), userId
-    );
+    await db.run('UPDATE users SET is_member = 1, membership_expires = ? WHERE id = ?', [
+          expires.toISOString(),
+          userId,
+        ]);
+    
     res.json({ success: true, message: 'Membership activated', expires: expires.toISOString() });
   } catch (err) {
     res.status(500).json({ error: err.message });
