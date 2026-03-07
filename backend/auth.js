@@ -1,6 +1,6 @@
 import express from 'express'
 const router = express.Router();
-import * as db from './db'
+import * as db from './db.js'
 
 // Register
 router.post('/register', (req, res) => {
@@ -61,4 +61,4 @@ router.get('/me/:userId', (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
