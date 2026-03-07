@@ -1,11 +1,11 @@
 {
-  "name": "bees-hub",
+  "name": "backend",
   "version": "1.0.0",
-  "description": "Dating App",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Muhaimin",
-  "license": "ISC"
+  "license": "ISC",
+  "description": ""
 }
