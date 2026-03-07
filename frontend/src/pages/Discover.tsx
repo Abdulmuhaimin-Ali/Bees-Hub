@@ -4,26 +4,19 @@ import "./Discover.css";
 
 interface MatchProfile {
   id: number;
-  name: string;
-  age: number;
-  location: string | null;
-  occupation: string;
-  bio: string;
-  interests: string[];
   compatibility: number;
-  initials: string;
   gradient: string;
+  name: string | undefined;
+  age: number | undefined;
+  location: string | null | undefined;
+  occupation: string | undefined;
+  bio: string | undefined;
+  interests: string[];
+  initials: string | undefined;
 }
 
 const PROFILES: MatchProfile[] = [
   {
-<<<<<<< HEAD
-    id: 1, name: 'Sarah Kim', age: 26, location: null,
-    occupation: 'UX Designer at Meta', initials: 'SK',
-    bio: 'Creative soul who loves designing beautiful things and exploring hidden cafés.',
-    interests: ['Coffee', 'Art', 'Hiking', 'Photography'],
-    compatibility: 94, gradient: 'linear-gradient(135deg, #f59e0b, #ef4444)',
-=======
     id: 1,
     name: "Sarah Kim",
     age: 26,
@@ -34,7 +27,6 @@ const PROFILES: MatchProfile[] = [
     interests: ["Coffee", "Art", "Hiking", "Photography"],
     compatibility: 94,
     gradient: "linear-gradient(135deg, #f59e0b, #ef4444)",
->>>>>>> 1bf592f9bf7bb5a3ce578d592055ec5b557f6891
   },
   {
     id: 2,
@@ -116,14 +108,8 @@ export default function Discover() {
           <p>Find your perfect match</p>
         </div>
 
-<<<<<<< HEAD
         {/* TODO: shows profiles based on swip direction */}
         <div className={`profile-card-stack ${profiles.length > 1 ? `swiping-${swipeDirection}` : ''}`}>
-=======
-        <div
-          className={`profile-card-stack ${swipeDirection ? `swiping-${swipeDirection}` : ""}`}
-        >
->>>>>>> 1bf592f9bf7bb5a3ce578d592055ec5b557f6891
           {/* Next card (behind) */}
           {profiles[1] && (
             <div className="profile-card next-card">
@@ -147,7 +133,7 @@ export default function Discover() {
             <div className="card-body">
               <div className="card-name-row">
                 <h2>
-                  {currentProfile.name}, {currentProfile.age}
+                  {currentProfile.name ? "unnamed" : currentProfile.name}, {currentProfile.age}
                 </h2>
                 <div className="compat-badge">
                   <Sparkles size={14} />
@@ -155,18 +141,8 @@ export default function Discover() {
                 </div>
               </div>
               <div className="card-meta">
-<<<<<<< HEAD
                 { currentProfile.location ? <span><MapPin size={14} /> {currentProfile.location}</span> : <span></span>}
-                {/*<span><MapPin size={14} /> {currentProfile.location}</span>*/}
-                <span><Briefcase size={14} /> {currentProfile.occupation}</span>
-=======
-                <span>
-                  <MapPin size={14} /> {currentProfile.location}
-                </span>
-                <span>
-                  <Briefcase size={14} /> {currentProfile.occupation}
-                </span>
->>>>>>> 1bf592f9bf7bb5a3ce578d592055ec5b557f6891
+                { currentProfile.occupation ? <span><Briefcase size={14} /> {currentProfile.occupation}</span> : <span></span>}
               </div>
               <p className="card-bio">{currentProfile.bio}</p>
               <div className="card-interests">
