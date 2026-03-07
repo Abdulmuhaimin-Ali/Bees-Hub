@@ -8,10 +8,10 @@ router.post('/register', async (req, res) => {
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
 
   try {
-    const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+    const existing = await db.get('SELECT id FROM users WHERE email = ?', [email])
     if (existing) return res.status(409).json({ error: 'Email already registered' });
 
-    const result = db.prepare('INSERT INTO users (email, password) VALUES (?, ?)').run(email, password);
+    const result = await db.run('INSERT INTO users (id, email, password) VALUES (?, ?)', [email, password]);
 
     const user = await db.get('SELECT id, email, is_member FROM users WHERE id = ?', [result.lastInsertRowid]);
 
