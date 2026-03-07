@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Camera, Edit3, MapPin, Briefcase, Heart, Sparkles } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Camera, Edit3, MapPin, Briefcase, Heart, Sparkles, LogOut } from 'lucide-react';
 import './Profile.css';
 
 const INTERESTS = [
@@ -8,6 +9,7 @@ const INTERESTS = [
 ];
 
 export default function Profile() {
+  const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
   const [profile, setProfile] = useState({
     firstName: 'Alex',
@@ -152,6 +154,11 @@ export default function Profile() {
             Save Changes
           </button>
         )}
+
+        <button className="sign-out-btn" onClick={() => navigate('/')}>
+          <LogOut size={18} />
+          Sign Out
+        </button>
       </div>
     </div>
   );

@@ -246,7 +246,7 @@ export default function SignUp() {
               Continue <ArrowRight size={18} />
             </button>
           ) : (
-            <Link to="/" className="btn-primary">
+            <Link to="/discover" className="btn-primary">
               Create Account <ArrowRight size={18} />
             </Link>
           )}

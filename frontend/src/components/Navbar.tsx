@@ -10,7 +10,7 @@ export default function Navbar() {
         <span className="brand-name">BeesHub</span>
       </div>
       <div className="navbar-links">
-        <NavLink to="/" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+        <NavLink to="/discover" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
           <Home size={20} />
           <span>Discover</span>
         </NavLink>
