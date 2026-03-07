@@ -88,20 +88,26 @@ export async function getAllProfiles() {
 }
 
 export async function getProfile(userId: string) {
-  const res = await fetch(`${BASE_URL}/profiles/${encodeURIComponent(userId)}`, {
-    credentials: "include",
-  });
+  const res = await fetch(
+    `${BASE_URL}/profiles/${encodeURIComponent(userId)}`,
+    {
+      credentials: "include",
+    },
+  );
   if (!res.ok) throw new Error("Failed to fetch profile");
   return res.json() as Promise<Profile>;
 }
 
 export async function saveProfile(userId: string, data: Partial<Profile>) {
-  const res = await fetch(`${BASE_URL}/profiles/${encodeURIComponent(userId)}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify(data),
-  });
+  const res = await fetch(
+    `${BASE_URL}/profiles/${encodeURIComponent(userId)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(data),
+    },
+  );
   if (!res.ok) throw new Error("Failed to save profile");
   return res.json() as Promise<Profile>;
 }
