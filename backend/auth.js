@@ -3,7 +3,7 @@ const router = express.Router();
 import * as db from './db.js'
 
 // Register
-router.post('/register', (req, res) => {
+router.post('/register', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
 
@@ -12,7 +12,10 @@ router.post('/register', (req, res) => {
     if (existing) return res.status(409).json({ error: 'Email already registered' });
 
     const result = db.prepare('INSERT INTO users (email, password) VALUES (?, ?)').run(email, password);
-    const user = db.prepare('SELECT id, email, is_member FROM users WHERE id = ?').get(result.lastInsertRowid);
+
+    const user = await db.get('SELECT id, email, is_member FROM users WHERE id = ?', [result.lastInsertRowid]);
+
+
     res.json({ user });
   } catch (err) {
     res.status(500).json({ error: err.message });
