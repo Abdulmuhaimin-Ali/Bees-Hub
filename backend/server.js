@@ -13,6 +13,17 @@ import router from './profile.js'
 const app = express()
 const port = 9000;
 
+// Initialize the database and schema
+(async () => {
+  try {
+    await getDb(); 
+    console.log('Database initialized successfully.');
+  } catch (err) {
+    console.error('Failed to initialize database:', err);
+    process.exit(1); 
+  }
+})();
+
 
 app.use(cors());
 app.use(express.json());
@@ -44,12 +55,12 @@ function requireAuth(req, res, next) {
   // Auth routes
   app.post('/api/auth/register', async (req, res) => {
     try{
-        await getDb();
         const {email, password} = req.body;
         if(!email || !password) return res.status(400).json({error: 'Email and password required' });
-        const existing = get('SELECT id FROM users WHERE email = ?', [email]);
 
+        const existing = await get('SELECT id FROM users WHERE email = ?', [email]);
         if (existing) return res.status(400).json({ error: 'Email already registered' });
+
         const id = uuidv4();
         run('INSERT INTO users (id, email, password) VALUES (?, ?, ?)', [id, email, password]);
         req.session.userId = id;
@@ -60,9 +71,8 @@ function requireAuth(req, res, next) {
 
 app.post('/api/auth/login', async (req, res) => {
     try{
-        await getDb();
         const {email, password} = req.body;
-        const user = get('SELECT * FROM users WHERE email = ? AND password = ?', [email, password]);
+        const user = await get('SELECT * FROM users WHERE email = ? AND password = ?', [email, password]);
         if (!user) return res.status(401).json({ error: 'Invalid credentials' });
         req.session.userId = user.id;
         req.session.email = user.email;
@@ -82,3 +92,4 @@ app.use('/api/profiles', router);
 app.listen(port, () => {
     console.log(`Server listening at http://localhost:${port}`);
 });
+

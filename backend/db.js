@@ -54,7 +54,7 @@ function initSchema() {
       weight_kg INTEGER,
       age INTEGER,
       gender TEXT,
-      photo_url TEXTa,
+      photo_url TEXT,
       bio TEXT,
       -- Professional
       job_title TEXT,
@@ -72,6 +72,7 @@ function initSchema() {
       preferred_age_max INTEGER,
       interests TEXT,
       relationship_type TEXT,
+      deal_breakers TEXT,
       FOREIGN KEY(user_id) REFERENCES users(id)
     );
 
