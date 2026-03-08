@@ -6,7 +6,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 import path from 'path'
 import fs from 'fs'
 import {v4 as uuidv4} from 'uuid'
-import {getDb, run, get} from './db.js'
+import {getDb, run, get, all} from './db.js'
 import { error } from 'console'
 
 // routes
@@ -41,7 +41,7 @@ app.use(session({
     secret: 'itconnect-secret-bare-bones',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false, httpOnly: true, maxAge: 24 * 60 * 60 * 1000 }
+    cookie: { secure: false, httpOnly: true}
   }));
 
 // Helper: require login
@@ -121,9 +121,9 @@ app.get('/api/matches', requireMember,  async (req, res) => {
 
   const baseUrl = `${req.protocol}://${req.get('host')}`;
 
-  console.log("userId error: ", req.user_1);
+  console.log("userId error: ", req.session.userId);
   // get user profile.
-  const currentUserRes = await fetch(`${baseUrl}/api/profiles/${req.user_1}`)
+  const currentUserRes = await fetch(`${baseUrl}/api/profiles/${req.session.userId}`)
  
   const currentUser = await currentUserRes.json();
 
@@ -132,24 +132,22 @@ app.get('/api/matches', requireMember,  async (req, res) => {
   const allProfiles = await allProfilesRes.json();
 
   // send it to ai agent
-  const model = genAI.getGenerativeModel({model: 'gemini-2.5-flash'});
-
   const prompt = `
       You are a matchmaking assistant. Based on the current user's profile, 
       recommend the best matching users from the list below.
 
       Current user:
-      ${JSON.stringify(currentUser, null, 2)}
+      ${JSON.stringify(currentUser)}
 
       Other users:
-      ${JSON.stringify(allProfiles, null, 2)}
+      ${JSON.stringify(allProfiles)}
 
       Return ONLY a string of user IDs seprated by a ',' in order of best match, like:
       "4e3jkf, djkajdfj, ajkdjfkj". The userId is stored in the user_id field.
       No explanation, no markdown, just the raw JSON array.
     `;
 
-    const aiRes = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent', {
+    const aiRes = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -182,15 +180,15 @@ app.get('/api/matches', requireMember,  async (req, res) => {
     console.log("returned ids from ai agent", text);
 
     const ids = text.split(',').map(v => v.trim());
-    const placeholders = ids.map(() => '?').join(',');
+    const placeholder = ids.map(() => '?').join(',');
 
 
     const profiles = await all(
       `SELECT p.*, u.email, u.is_member
        FROM profiles p
        JOIN users u ON p.user_id = u.id
-       WHERE p.user_id IN (${placeholders})`,
-      recommendedIds
+       WHERE p.user_id IN (${placeholder})`,
+       ids
     );
     res.json(profiles);
 })
