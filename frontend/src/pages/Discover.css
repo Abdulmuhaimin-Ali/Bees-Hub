@@ -193,18 +193,14 @@
   transform: scale(1.1);
 }
 
-.action-btn:active {
-  background: #b9b9b9 !important;
-}
-
 .action-btn.pass {
   background: #fff;
   color: #ef4444;
 }
 
 .action-btn.like {
-  background: #ffffff;
-  color: #22c55e;
+  background: #f59e0b;
+  color: #fff;
 }
 
 /* No more */
