@@ -104,7 +104,6 @@ export default function Discover() {
           <p>Find your perfect match</p>
         </div>
 
-        {/* TODO: shows profiles based on swip direction */}
         <div className={`profile-card-stack ${profiles.length > 1 ? `swiping-${swipeDirection}` : ''}`}>
           {/* Next card (behind) */}
           {profiles[1] && (

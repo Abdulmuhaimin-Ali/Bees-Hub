@@ -112,15 +112,12 @@ export default function Matches() {
                     <Briefcase size={14} />
                     {match.occupation}
                   </p>
-                  <div className="match-compatibility">
-                    <Heart size={14} />
-                    {match.compatibility}% match
-                  </div>
                 </div>
               </div>
             ))}
           </div>
         </div>
+
         <div className="activities-main">
           <h2>Recommended Activities</h2>
           <div className="activities-list">
