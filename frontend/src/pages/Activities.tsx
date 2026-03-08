@@ -54,10 +54,9 @@ export default function Activities() {
 
     const stored = localStorage.getItem("user");
     if (!stored) return;
-    const user = JSON.parse(stored);
 
     setLoadingActivities(true);
-    getActivities(user.id, matchId)
+    getActivities(matchId)
       .then((data) => {
         setActivitiesMap((prev) => ({ ...prev, [matchId]: data }));
       })
