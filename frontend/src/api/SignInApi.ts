@@ -137,11 +137,10 @@ export interface Activity {
 }
 
 export async function getActivities(
-  userId: string,
   matchUserId: string,
 ): Promise<Activity[]> {
   const res = await fetch(
-    `${BASE_URL}/activities?userId=${encodeURIComponent(userId)}&matchUserId=${encodeURIComponent(matchUserId)}`,
+    `${BASE_URL}/activity/${encodeURIComponent(matchUserId)}`,
     { credentials: "include" },
   );
   if (!res.ok) throw new Error("Failed to fetch activities");
