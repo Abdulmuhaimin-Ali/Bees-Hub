@@ -77,7 +77,15 @@ export default function Discover() {
     if (direction === "right" && currentProfile) {
       // Save liked user to matches in localStorage
       const raw = localStorage.getItem("matches");
-      const matches: Record<string, { name: string; initials: string; gradient: string; interests: string[] }> = raw ? JSON.parse(raw) : {};
+      const matches: Record<
+        string,
+        {
+          name: string;
+          initials: string;
+          gradient: string;
+          interests: string[];
+        }
+      > = raw ? JSON.parse(raw) : {};
       matches[currentProfile.id] = {
         name: currentProfile.name,
         initials: currentProfile.initials,

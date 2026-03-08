@@ -27,9 +27,25 @@ const INTERESTS = [
 ];
 
 const TECH_SKILLS = [
-  "JavaScript", "TypeScript", "Python", "Java", "C++", "Go", "Rust",
-  "React", "Angular", "Vue", "Node.js", "AWS", "Docker", "Kubernetes",
-  "Machine Learning", "Data Science", "DevOps", "Mobile Dev", "UI/UX",
+  "JavaScript",
+  "TypeScript",
+  "Python",
+  "Java",
+  "C++",
+  "Go",
+  "Rust",
+  "React",
+  "Angular",
+  "Vue",
+  "Node.js",
+  "AWS",
+  "Docker",
+  "Kubernetes",
+  "Machine Learning",
+  "Data Science",
+  "DevOps",
+  "Mobile Dev",
+  "UI/UX",
 ];
 
 export default function SignUp() {
@@ -362,7 +378,9 @@ export default function SignUp() {
                 <label>Years of Experience</label>
                 <select
                   value={form.yearsExperience}
-                  onChange={(e) => updateField("yearsExperience", e.target.value)}
+                  onChange={(e) =>
+                    updateField("yearsExperience", e.target.value)
+                  }
                 >
                   <option value="">Select</option>
                   <option>0 - 1</option>
@@ -418,7 +436,9 @@ export default function SignUp() {
         {step === 4 && (
           <div className="step-content">
             <h2>Your Interests</h2>
-            <p className="step-desc">Select interests to help us find better matches</p>
+            <p className="step-desc">
+              Select interests to help us find better matches
+            </p>
             <div className="interests-grid">
               {INTERESTS.map((interest) => (
                 <button
@@ -443,7 +463,9 @@ export default function SignUp() {
                   type="number"
                   placeholder="18"
                   value={form.preferredAgeMin}
-                  onChange={(e) => updateField("preferredAgeMin", e.target.value)}
+                  onChange={(e) =>
+                    updateField("preferredAgeMin", e.target.value)
+                  }
                 />
               </div>
               <div className="form-group">
@@ -452,14 +474,21 @@ export default function SignUp() {
                   type="number"
                   placeholder="35"
                   value={form.preferredAgeMax}
-                  onChange={(e) => updateField("preferredAgeMax", e.target.value)}
+                  onChange={(e) =>
+                    updateField("preferredAgeMax", e.target.value)
+                  }
                 />
               </div>
             </div>
             <div className="form-group">
               <label>Relationship Type</label>
               <div className="option-group">
-                {["Friendship", "Casual Dating", "Long-term", "Not sure yet"].map((r) => (
+                {[
+                  "Friendship",
+                  "Casual Dating",
+                  "Long-term",
+                  "Not sure yet",
+                ].map((r) => (
                   <button
                     key={r}
                     className={`option-btn ${form.relationshipType === r ? "selected" : ""}`}
