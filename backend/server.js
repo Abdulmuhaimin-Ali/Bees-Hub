@@ -194,19 +194,19 @@ app.get('/api/matches', requireMember,  async (req, res) => {
 })
 
 
-app.get('/api/activity/:matchedUserId',  async (req, res) => {
+app.get('/api/activity/:userId',  async (req, res) => {
 
   const baseUrl = `${req.protocol}://${req.get('host')}`;
-  const {matchedUserId} = req.params;
+  const {userId} = req.params;
 
-  console.log("other user id", matchedUserId);
+  console.log("other user id", userId);
 
   console.log("userId error: ", req.session.userId);
   // get user profile.
   const currentUserRes = await fetch(`${baseUrl}/api/profiles/${req.session.userId}`)
   const currentUser = await currentUserRes.json();
 
-  const otherUserRes = await fetch(`${baseUrl}/api/profiles/${matchedUserId}`) 
+  const otherUserRes = await fetch(`${baseUrl}/api/profiles/${userId}`) 
   const otherUser = await otherUserRes.json();
 
   console.log(currentUser);
