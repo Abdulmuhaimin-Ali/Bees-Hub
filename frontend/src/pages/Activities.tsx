@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { MapPin, Clock, Users, Navigation, Star, Heart } from "lucide-react";
+import { MapPin, Clock, Users, Star, Heart, DollarSign, Sparkles } from "lucide-react";
 import { getMatches, getActivities, type Activity, type Profile } from "../api/SignInApi";
 import "./Activities.css";
 
@@ -10,6 +10,71 @@ const GRADIENTS = [
   "linear-gradient(135deg, #10b981, #14b8a6)",
   "linear-gradient(135deg, #f43f5e, #a855f7)",
 ];
+
+const CATEGORY_EMOJIS: Record<string, string> = {
+  "Outdoor Recreation": "🌿",
+  "Food & Drink": "🍽️",
+  "Arts & Culture": "🎨",
+  "Entertainment": "🎭",
+  "Nightlife": "🌙",
+  "Sports & Fitness": "⚽",
+  "Shopping": "🛍️",
+  "Wellness": "🧘",
+  "Music": "🎵",
+  "Adventure": "🏔️",
+  "Coffee & Café": "☕",
+  "Movies": "🎬",
+  "Gaming": "🎮",
+  "Beach": "🏖️",
+  "Travel": "✈️",
+};
+
+function getCategoryEmoji(category: string): string {
+  if (CATEGORY_EMOJIS[category]) return CATEGORY_EMOJIS[category];
+  const key = Object.keys(CATEGORY_EMOJIS).find((k) =>
+    category.toLowerCase().includes(k.toLowerCase()) ||
+    k.toLowerCase().includes(category.toLowerCase())
+  );
+  return key ? CATEGORY_EMOJIS[key] : "📍";
+}
+
+function renderPriceLevel(price: string) {
+  const count = (price.match(/\$/g) || []).length;
+  return (
+    <span className="price-indicator">
+      {Array.from({ length: 4 }, (_, i) => (
+        <DollarSign
+          key={i}
+          size={13}
+          className={i < count ? "price-active" : "price-dim"}
+        />
+      ))}
+    </span>
+  );
+}
+
+function renderStars(rating: number) {
+  const full = Math.floor(rating);
+  const hasHalf = rating - full >= 0.3;
+  return (
+    <span className="stars-row">
+      {Array.from({ length: 5 }, (_, i) => (
+        <Star
+          key={i}
+          size={13}
+          className={
+            i < full
+              ? "star-filled"
+              : i === full && hasHalf
+                ? "star-half"
+                : "star-empty"
+          }
+        />
+      ))}
+      <span className="rating-number">{rating}</span>
+    </span>
+  );
+}
 
 interface MatchEntry {
   name: string;
@@ -135,33 +200,41 @@ export default function Activities() {
 
             {loadingActivities ? (
               <p className="loading-text">Loading activities...</p>
+            ) : activities.length === 0 ? (
+              <div className="no-activities">
+                <Sparkles size={32} />
+                <p>No activities found for this match yet.</p>
+              </div>
             ) : (
               <div className="activities-list">
-                {activities.map((activity) => (
-                  <div key={activity.id} className="activity-card">
-                    <div className="activity-emoji">{activity.emoji}</div>
+                {activities.map((activity, idx) => (
+                  <div key={idx} className="activity-card">
+                    <div className="activity-emoji">
+                      {getCategoryEmoji(activity.category)}
+                    </div>
                     <div className="activity-info">
                       <div className="activity-top">
                         <h3>{activity.name}</h3>
-                        <span className="activity-price">{activity.price}</span>
+                        {renderPriceLevel(activity.estimated_cost_per_person)}
                       </div>
                       <span className="activity-category">
                         {activity.category}
                       </span>
                       <div className="activity-details">
                         <span className="detail">
-                          <Navigation size={13} /> {activity.distance}
+                          {renderStars(activity.rating)}
                         </span>
                         <span className="detail">
-                          <Star size={13} /> {activity.rating}
+                          <Clock size={13} /> Open until {activity.open_until}
                         </span>
-                        <span className="detail">
-                          <Clock size={13} /> {activity.hours}
-                        </span>
+                      </div>
+                      <div className="activity-reason">
+                        <Sparkles size={13} />
+                        <span>{activity.reason}</span>
                       </div>
                       <div className="activity-bottom">
                         <span className="activity-address">
-                          <MapPin size={13} /> {activity.address}
+                          <MapPin size={13} /> {activity.street}, {activity.city}
                         </span>
                       </div>
                       <button className="suggest-date-btn">
