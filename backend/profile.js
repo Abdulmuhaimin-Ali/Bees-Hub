@@ -97,4 +97,40 @@ router.post('/:userId', (req, res) => {
 //   }
 // });
 
+// get matches's dates
+router.get('/activities/:user1_id/:user2_id', async (req, res) => {
+  try {
+    const dates = await get(`
+    SELECT d.*
+    FROM dates d
+    JOIN matches m ON d.match_id = m.id
+    WHERE m.user1_id = ? AND m.user2_id = ?
+    `, [req.params.user1_id, req.params.user2_id]);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+  finally {
+    res.json(dates)
+  }
+});
+
+// get user's matches
+router.get('/matches', async (req, res) => {
+  try {
+    const dates = await get(`
+    SELECT d.*
+    FROM dates d
+    JOIN matches m ON d.match_id = m.id
+    WHERE m.user1_id = ? AND m.user2_id = ?
+    `, [req.params.user1_id, req.params.user2_id]);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+  finally {
+    res.json(dates)
+  }
+});
+
 export default router;
