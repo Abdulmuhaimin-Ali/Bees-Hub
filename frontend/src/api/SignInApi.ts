@@ -143,5 +143,6 @@ export async function getActivities(
     { credentials: "include" },
   );
   if (!res.ok) throw new Error("Failed to fetch activities");
-  return res.json();
+  const data = await res.json();
+  return Array.isArray(data) ? data : [data];
 }

@@ -348,7 +348,7 @@ const aiRes2 = await fetch('https://generativelanguage.googleapis.com/v1beta/mod
     ],
     // 'max_tokens' moves inside 'generationConfig'
     generationConfig: {
-      maxOutputTokens: 1024,
+      maxOutputTokens: 2024,
       responseMimeType: "application/json" 
     }
   })
