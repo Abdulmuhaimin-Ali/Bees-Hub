@@ -112,6 +112,16 @@ export async function saveProfile(userId: string, data: Partial<Profile>) {
   return res.json() as Promise<Profile>;
 }
 
+// Matches
+
+export async function getMatches(): Promise<Profile[]> {
+  const res = await fetch(`${BASE_URL}/matches`, {
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to fetch matches");
+  return res.json();
+}
+
 // Activities
 
 export interface Activity {

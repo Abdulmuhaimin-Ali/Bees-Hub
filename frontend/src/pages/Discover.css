@@ -151,11 +151,11 @@
   display: flex;
   justify-content: center;
   gap: 2rem;
-  margin-top: 1.5rem;
+  margin-top: -1.5rem;
   padding-bottom: 2rem;
 }
 
-@media (max-width: 767px) {
+@media (max-width: 800px) {
   .profile-card-stack {
     height: auto;
     min-height: 400px;

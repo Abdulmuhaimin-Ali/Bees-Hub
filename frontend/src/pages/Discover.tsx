@@ -65,8 +65,16 @@ export default function Discover() {
   );
 
   useEffect(() => {
+    const stored = localStorage.getItem("user");
+    const currentUserId = stored ? JSON.parse(stored).id : null;
+
     getAllProfiles()
-      .then((data) => setProfiles(data.map(toMatchProfile)))
+      .then((data) => {
+        const others = currentUserId
+          ? data.filter((p) => p.user_id !== currentUserId)
+          : data;
+        setProfiles(others.map(toMatchProfile));
+      })
       .catch((err) => console.error("Failed to load profiles:", err))
       .finally(() => setLoading(false));
   }, []);
@@ -74,26 +82,6 @@ export default function Discover() {
   const currentProfile = profiles[0];
 
   const handleSwipe = (direction: "left" | "right") => {
-    if (direction === "right" && currentProfile) {
-      // Save liked user to matches in localStorage
-      const raw = localStorage.getItem("matches");
-      const matches: Record<
-        string,
-        {
-          name: string;
-          initials: string;
-          gradient: string;
-          interests: string[];
-        }
-      > = raw ? JSON.parse(raw) : {};
-      matches[currentProfile.id] = {
-        name: currentProfile.name,
-        initials: currentProfile.initials,
-        gradient: currentProfile.gradient,
-        interests: currentProfile.interests,
-      };
-      localStorage.setItem("matches", JSON.stringify(matches));
-    }
     setSwipeDirection(direction);
     setTimeout(() => {
       setProfiles((prev) => prev.slice(1));

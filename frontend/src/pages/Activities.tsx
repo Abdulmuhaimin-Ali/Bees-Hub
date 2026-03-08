@@ -1,7 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MapPin, Clock, Users, Navigation, Star, Heart } from "lucide-react";
-import { getActivities, type Activity } from "../api/SignInApi";
+import { getMatches, getActivities, type Activity, type Profile } from "../api/SignInApi";
 import "./Activities.css";
+
+const GRADIENTS = [
+  "linear-gradient(135deg, #f59e0b, #ef4444)",
+  "linear-gradient(135deg, #8b5cf6, #ec4899)",
+  "linear-gradient(135deg, #06b6d4, #3b82f6)",
+  "linear-gradient(135deg, #10b981, #14b8a6)",
+  "linear-gradient(135deg, #f43f5e, #a855f7)",
+];
 
 interface MatchEntry {
   name: string;
@@ -10,86 +18,34 @@ interface MatchEntry {
   interests: string[];
 }
 
-// Fallback activities when endpoint Not Finished
-const FALLBACK_ACTIVITIES: Activity[] = [
-  {
-    id: "1",
-    name: "Cozy Bean Café",
-    category: "Coffee",
-    distance: "0.8 km",
-    rating: 4.7,
-    price: "$$",
-    emoji: "☕",
-    address: "123 Queen St W, Toronto",
-    hours: "Open until 9 PM",
-  },
-  {
-    id: "2",
-    name: "High Park Trail Walk",
-    category: "Outdoors",
-    distance: "2.3 km",
-    rating: 4.8,
-    price: "Free",
-    emoji: "🌿",
-    address: "High Park, Toronto",
-    hours: "Open 24/7",
-  },
-  {
-    id: "3",
-    name: "Pixel & Pour Arcade Bar",
-    category: "Entertainment",
-    distance: "1.5 km",
-    rating: 4.5,
-    price: "$$",
-    emoji: "🎮",
-    address: "456 King St W, Toronto",
-    hours: "Open until 2 AM",
-  },
-  {
-    id: "4",
-    name: "Art Gallery of Ontario",
-    category: "Culture",
-    distance: "3.1 km",
-    rating: 4.9,
-    price: "$$$",
-    emoji: "🎨",
-    address: "317 Dundas St W, Toronto",
-    hours: "Open until 6 PM",
-  },
-  {
-    id: "5",
-    name: "Sushi Masaki Omakase",
-    category: "Dining",
-    distance: "1.2 km",
-    rating: 4.6,
-    price: "$$$$",
-    emoji: "🍣",
-    address: "33 Harbour St, Toronto",
-    hours: "Open until 11 PM",
-  },
-  {
-    id: "6",
-    name: "Toronto Rock Climbing",
-    category: "Fitness",
-    distance: "4.0 km",
-    rating: 4.4,
-    price: "$$",
-    emoji: "🧗",
-    address: "800 Dundas St E, Toronto",
-    hours: "Open until 10 PM",
-  },
-];
+function profileToMatch(p: Profile, index: number): [string, MatchEntry] {
+  const name = [p.first_name, p.last_name].filter(Boolean).join(" ") || p.email;
+  const initials = ((p.first_name?.[0] ?? "") + (p.last_name?.[0] ?? "")).toUpperCase() || p.email[0].toUpperCase();
+  const interests = p.interests ? p.interests.split(",").map((s) => s.trim()) : [];
+  return [
+    p.user_id,
+    { name, initials, gradient: GRADIENTS[index % GRADIENTS.length], interests },
+  ];
+}
 
 export default function Activities() {
-  const [matches] = useState<Record<string, MatchEntry>>(() => {
-    const raw = localStorage.getItem("matches");
-    return raw ? JSON.parse(raw) : {};
-  });
+  const [matches, setMatches] = useState<Record<string, MatchEntry>>({});
+  const [loadingMatches, setLoadingMatches] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activitiesMap, setActivitiesMap] = useState<
     Record<string, Activity[]>
   >({});
   const [loadingActivities, setLoadingActivities] = useState(false);
+
+  useEffect(() => {
+    getMatches()
+      .then((profiles) => {
+        const entries = profiles.map(profileToMatch);
+        setMatches(Object.fromEntries(entries));
+      })
+      .catch((err) => console.error("Failed to fetch matches:", err))
+      .finally(() => setLoadingMatches(false));
+  }, []);
 
   // When a match is selected, fetch activities for that pair
   const fetchActivities = (matchId: string) => {
@@ -105,12 +61,8 @@ export default function Activities() {
       .then((data) => {
         setActivitiesMap((prev) => ({ ...prev, [matchId]: data }));
       })
-      .catch(() => {
-        // Endpoint not ready yet — use fallback
-        setActivitiesMap((prev) => ({
-          ...prev,
-          [matchId]: FALLBACK_ACTIVITIES,
-        }));
+      .catch((err) => {
+        console.error("Failed to fetch activities:", err);
       })
       .finally(() => setLoadingActivities(false));
   };
@@ -133,7 +85,9 @@ export default function Activities() {
           <h3>
             <Heart size={16} /> Your Matches
           </h3>
-          {matchIds.length === 0 ? (
+          {loadingMatches ? (
+            <p className="no-matches-text">Loading matches...</p>
+          ) : matchIds.length === 0 ? (
             <p className="no-matches-text">
               No matches yet — keep swiping on Discover!
             </p>
