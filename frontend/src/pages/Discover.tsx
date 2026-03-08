@@ -74,6 +74,18 @@ export default function Discover() {
   const currentProfile = profiles[0];
 
   const handleSwipe = (direction: "left" | "right") => {
+    if (direction === "right" && currentProfile) {
+      // Save liked user to matches in localStorage
+      const raw = localStorage.getItem("matches");
+      const matches: Record<string, { name: string; initials: string; gradient: string; interests: string[] }> = raw ? JSON.parse(raw) : {};
+      matches[currentProfile.id] = {
+        name: currentProfile.name,
+        initials: currentProfile.initials,
+        gradient: currentProfile.gradient,
+        interests: currentProfile.interests,
+      };
+      localStorage.setItem("matches", JSON.stringify(matches));
+    }
     setSwipeDirection(direction);
     setTimeout(() => {
       setProfiles((prev) => prev.slice(1));

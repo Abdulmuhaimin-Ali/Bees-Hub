@@ -111,3 +111,29 @@ export async function saveProfile(userId: string, data: Partial<Profile>) {
   if (!res.ok) throw new Error("Failed to save profile");
   return res.json() as Promise<Profile>;
 }
+
+// Activities
+
+export interface Activity {
+  id: string;
+  name: string;
+  category: string;
+  distance: string;
+  rating: number;
+  price: string;
+  emoji: string;
+  address: string;
+  hours: string;
+}
+
+export async function getActivities(
+  userId: string,
+  matchUserId: string,
+): Promise<Activity[]> {
+  const res = await fetch(
+    `${BASE_URL}/activities?userId=${encodeURIComponent(userId)}&matchUserId=${encodeURIComponent(matchUserId)}`,
+    { credentials: "include" },
+  );
+  if (!res.ok) throw new Error("Failed to fetch activities");
+  return res.json();
+}
