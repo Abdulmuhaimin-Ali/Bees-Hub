@@ -11,6 +11,8 @@ export default function SignIn() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
+  // Handle sign-in logic
+
   const handleSignIn = async () => {
     setError("");
     try {
