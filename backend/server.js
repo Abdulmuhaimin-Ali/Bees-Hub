@@ -51,12 +51,22 @@ function requireAuth(req, res, next) {
   }
   
   // Helper: require membership
-  function requireMember(req, res, next) {
+  async function requireMember(req, res, next) {
     if (!req.session.userId) return res.status(401).json({ error: 'Not authenticated' });
-    const user = get('SELECT * FROM users WHERE id = ?', [req.session.userId]);
-    if (!user || !user.is_member) return res.status(403).json({ error: 'Membership required' });
+    
+    const user_1 = await get('SELECT * FROM users WHERE id = ?', [req.session.userId]);
+    //if (!user || !user.is_member) return res.status(403).json({ error: 'Membership required' });
     next();
   }
+
+  app.get('/api/whoami', (req, res) => {
+    res.json({ 
+      user: req.user, 
+      session: req.session,
+      sessionID: req.sessionID,
+      isAuthenticated: req.isAuthenticated?.() 
+    });
+  });
 
   // Auth routes
   app.post('/api/auth/register', async (req, res) => {
@@ -80,9 +90,21 @@ app.post('/api/auth/login', async (req, res) => {
         const {email, password} = req.body;
         const user = await get('SELECT * FROM users WHERE email = ? AND password = ?', [email, password]);
         if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+
+        console.log('User ID:', user.id); // ← confirm id exists
+    
         req.session.userId = user.id;
         req.session.email = user.email;
-        res.json({ success: true, user: { id: user.id, email: user.email, is_member: user.is_member } });
+
+        req.session.save((err) => {
+          if (err) return res.status(500).json({ error: 'Session save failed' });
+          
+          console.log('Session saved:', req.session); // ← confirm in terminal
+
+          res.json({ success: true, user: { id: user.id, email: user.email, is_member: user.is_member } });
+        });
+
+
     } catch(e) { res.status(500).json({ error: e.message }); } 
 })
 
@@ -95,11 +117,19 @@ app.post('/api/auth/logout', (req, res) => {
 app.use('/api/profiles', router);
 
 // Matching
-// in this function I want to make a request to 
-app.get('/api/matches', requireMember, async (req, res) => {
-  // get user profile.
+app.get('/api/matches', requireMember,  async (req, res) => {
 
-  // get others profiles 
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+
+  console.log("userId error: ", req.user_1);
+  // get user profile.
+  const currentUserRes = await fetch(`${baseUrl}/api/profiles/${req.user_1}`)
+ 
+  const currentUser = await currentUserRes.json();
+
+   // get others profiles 
+  const allProfilesRes = await fetch(`${baseUrl}/api/profiles/`);
+  const allProfiles = await allProfilesRes.json();
 
   // send it to ai agent
   const model = genAI.getGenerativeModel({model: 'gemini-2.5-flash'});
@@ -112,21 +142,57 @@ app.get('/api/matches', requireMember, async (req, res) => {
       ${JSON.stringify(currentUser, null, 2)}
 
       Other users:
-      ${JSON.stringify(otherUsers.map(u => ({ id: u._id, ...u.toObject() })), null, 2)}
+      ${JSON.stringify(allProfiles, null, 2)}
 
-      Return ONLY a JSON array of user IDs (strings) in order of best match, like:
-      ["id1", "id2", "id3"]
+      Return ONLY a string of user IDs seprated by a ',' in order of best match, like:
+      "4e3jkf, djkajdfj, ajkdjfkj". The userId is stored in the user_id field.
       No explanation, no markdown, just the raw JSON array.
     `;
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text().trim();
+    const aiRes = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // Swapped the Anthropic header for the Google one
+        'x-goog-api-key': process.env.GEMINI_API_KEY 
+      },
+      body: JSON.stringify({
+        // 'messages' becomes 'contents' and 'parts'
+        contents: [
+          { 
+            role: 'user', 
+            parts: [{ text: prompt }] 
+          }
+        ],
+        // 'max_tokens' moves inside 'generationConfig'
+        generationConfig: {
+          maxOutputTokens: 1024
+        }
+      })
+    });
 
-    const recommendedIds = JSON.parse(text);
+    const data = await aiRes.json();
 
-  // return list of users with those ids
+    if (!aiRes.ok) {
+      console.error("Gemini API Error:", data);
+      throw new Error(`API returned status ${aiRes.status}`);
+    }
+
+    const text = data.candidates[0].content.parts[0].text.trim();
+    console.log("returned ids from ai agent", text);
+
+    const ids = text.split(',').map(v => v.trim());
+    const placeholders = ids.map(() => '?').join(',');
 
 
+    const profiles = await all(
+      `SELECT p.*, u.email, u.is_member
+       FROM profiles p
+       JOIN users u ON p.user_id = u.id
+       WHERE p.user_id IN (${placeholders})`,
+      recommendedIds
+    );
+    res.json(profiles);
 })
 
 
