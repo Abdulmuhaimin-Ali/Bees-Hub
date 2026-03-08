@@ -194,6 +194,183 @@ app.get('/api/matches', requireMember,  async (req, res) => {
 })
 
 
+app.get('/api/activity/:matchedUserId',  async (req, res) => {
+
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  const {matchedUserId} = req.params;
+
+  console.log("other user id", matchedUserId);
+
+  console.log("userId error: ", req.session.userId);
+  // get user profile.
+  const currentUserRes = await fetch(`${baseUrl}/api/profiles/${req.session.userId}`)
+  const currentUser = await currentUserRes.json();
+
+  const otherUserRes = await fetch(`${baseUrl}/api/profiles/${matchedUserId}`) 
+  const otherUser = await otherUserRes.json();
+
+  console.log(currentUser);
+  console.log(otherUser)
+
+  // prompt:
+ const ActivitiesPrompt = `You are an assistant that recommends activities for two people who matched on a social platform.
+
+Your task:
+Analyze both user profiles and suggest the TOP 1 activities they would likely enjoy doing together.
+
+Use the following reasoning process:
+1. Look for overlapping interests between the two users.
+2. Consider compatibility factors such as age, profession, hobbies, and personality hints from the bio.
+3. Suggest activities that both people would realistically enjoy.
+4. Avoid generic answers unless there is no overlap.
+5. Activities should be social, realistic, and possible in a typical city.
+
+Return only one activity strictly in the following JSON format:
+
+{
+  "activities": [
+    {
+      "title": "Activity name",
+      "reason": "Why this activity suits both users" - make this sentence short limited to 5-7 words.
+    },
+  ]
+}
+
+User 1 Profile:
+${JSON.stringify(currentUser)}
+
+User 2 Profile:
+${JSON.stringify(otherUser)}`;
+
+const aiRes = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    // Swapped the Anthropic header for the Google one
+    'x-goog-api-key': process.env.GEMINI_API_KEY 
+  },
+  body: JSON.stringify({
+    // 'messages' becomes 'contents' and 'parts'
+    contents: [
+      { 
+        role: 'user', 
+        parts: [{ text: ActivitiesPrompt }] 
+      }
+    ],
+    // 'max_tokens' moves inside 'generationConfig'
+    generationConfig: {
+      maxOutputTokens: 1024,
+      responseMimeType: "application/json" 
+    }
+  })
+});
+
+const data = await aiRes.json();
+
+if (!aiRes.ok) {
+  console.error("Gemini API Error:", data);
+  throw new Error(`API returned status ${aiRes.status}`);
+}
+
+const text = data.candidates[0].content.parts[0].text.trim();
+
+const parsed = JSON.parse(text);
+
+// Access the activities array
+const activities = parsed.activities;
+
+console.log("Activities returned from Ai", activities);
+
+ const UserActivityPrompt = `You are an assistant that recommends a meeting place for two matched users.
+
+Your task:
+1. Review both user profiles and their locations.
+2. Review the list of suggested activities.
+3. Choose the activity that best fits both users.
+4. Suggest a realistic venue where they could meet to do that activity.
+5. Prefer a place roughly convenient for both users.
+6. The venue must logically match the activity category.
+
+Guidelines:
+- The place should be a real type of venue (coffee shop, climbing gym, park, restaurant, museum, etc.).
+- Estimate values like rating, cost, and closing time if exact data is unknown.
+- Do not return multiple places. Return only ONE.
+
+Return ONLY JSON in the format below:
+
+{
+  "activity": {
+    "name": "Activity name",
+    "category": "General category of activity"
+  },
+  "place": {
+    "name": "Name of venue",
+    "street": "Street address",
+    "city": "City",
+    "rating": 0.0,
+    "estimated_cost_per_person": "$$",
+    "open_until": "HH:MM",
+    "reason": "Short explanation why this place fits both users and the activity" make this really short 5-7 words
+  }
+}
+
+User 1 Profile:
+${JSON.stringify(currentUser)}
+
+User 2 Profile:
+${JSON.stringify(otherUser)}
+
+Suggested Activities:
+${JSON.stringify(activities)}`;
+
+
+const aiRes2 = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    // Swapped the Anthropic header for the Google one
+    'x-goog-api-key': process.env.GEMINI_API_KEY 
+  },
+  body: JSON.stringify({
+    // 'messages' becomes 'contents' and 'parts'
+    contents: [
+      { 
+        role: 'user', 
+        parts: [{ text: UserActivityPrompt }] 
+      }
+    ],
+    // 'max_tokens' moves inside 'generationConfig'
+    generationConfig: {
+      maxOutputTokens: 1024,
+      responseMimeType: "application/json" 
+    }
+  })
+});
+
+
+const data2 = await aiRes2.json();
+
+if (!aiRes2.ok) {
+  console.error("Gemini API Error:", data2);
+  throw new Error(`API returned status ${aiRes2.status}`);
+}
+
+const text2 = data2.candidates[0].content.parts[0].text.trim();
+
+const parsed2 = JSON.parse(text2);
+
+const result = {
+  ...parsed2.activity,
+  ...parsed2.place
+};
+
+
+console.log("Activities and place returned from Ai", result);
+ 
+res.json(result);
+})
+
+
 app.listen(port, () => {
     console.log(`Server listening at http://localhost:${port}`);
 });
