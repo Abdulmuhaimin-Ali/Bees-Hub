@@ -3,7 +3,7 @@ import * as db from './db.js'
 const router = express.Router();
 import path from 'path'
 import multer from 'multer'
-import {getDb, run, get, all} from './db.js'
+import {run, get, all} from './db.js'
 
 
 const storage = multer.diskStorage({
@@ -44,58 +44,57 @@ router.get('/', async (req, res) => {
   });
 
 // Create or update profile
-router.post('/:userId', (req, res) => {
+router.post('/:userId', async (req, res) => {
   const { userId } = req.params;
   const data = req.body;
 
   try {
-    const existing = db.prepare('SELECT id FROM profiles WHERE user_id = ?').get(userId);
+    const existing = await get('SELECT id FROM profiles WHERE user_id = ?', [userId]);
 
     const fields = [
-      'first_name', 'last_name', 'date_of_birth', 'gender', 'address', 'city',
-      'province', 'postal_code', 'phone', 'height_cm', 'weight_kg', 'bio',
+      'first_name', 'last_name', 'gender', 'address', 'city',
+      'province', 'postal_code', 'phone', 'height_cm', 'weight_kg', 'age', 'bio',
       'job_title', 'work_type', 'employer', 'salary_range', 'years_experience',
       'education', 'certifications', 'tech_skills', 'looking_for', 'preferred_gender',
-      'preferred_age_min', 'preferred_age_max', 'relationship_type', 'interests', 'deal_breakers'
+      'preferred_age_min', 'preferred_age_max', 'relationship_type', 'interests'
     ];
 
     if (existing) {
       const setClauses = fields.map(f => `${f} = ?`).join(', ');
-      const values = fields.map(f => data[f] ?? null);
-      db.prepare(`UPDATE profiles SET ${setClauses}, updated_at = datetime('now') WHERE user_id = ?`)
-        .run(...values, userId);
+      const values = [...fields.map(f => data[f] ?? null), userId];
+       await run(`UPDATE profiles SET ${setClauses}, updated_at = datetime('now') WHERE user_id = ?`, values);
     } else {
       const cols = ['user_id', ...fields].join(', ');
-      const placeholders = ['?', ...fields.map(() => '?')].join(', ');
+      const placeholders = fields.map(() => '?').join(', ');
       const values = [userId, ...fields.map(f => data[f] ?? null)];
-      db.prepare(`INSERT INTO profiles (${cols}) VALUES (${placeholders})`).run(...values);
+       await run(`INSERT INTO profiles (${cols}) VALUES (?, ${placeholders})`, values);
     }
 
-    const profile = db.prepare('SELECT * FROM profiles WHERE user_id = ?').get(userId);
+    const profile = await get('SELECT * FROM profiles WHERE user_id = ?', [userId]);
     res.json(profile);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// // Upload photo
-// router.post('/:userId/photo', upload.single('photo'), (req, res) => {
-//   const { userId } = req.params;
-//   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+// Upload photo
+router.post('/:userId/photo', upload.single('photo'), async (req, res) => {
+  const { userId } = req.params;
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
-//   try {
-//     const photoUrl = `/uploads/${req.file.filename}`;
-//     const existing = db.prepare('SELECT id FROM profiles WHERE user_id = ?').get(userId);
-//     if (existing) {
-//       db.prepare('UPDATE profiles SET photo_url = ? WHERE user_id = ?').run(photoUrl, userId);
-//     } else {
-//       db.prepare('INSERT INTO profiles (user_id, photo_url) VALUES (?, ?)').run(userId, photoUrl);
-//     }
-//     res.json({ photo_url: photoUrl });
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// });
+  try {
+    const photoUrl = `/uploads/${req.file.filename}`;
+    const existing = await db.get('SELECT id FROM profiles WHERE user_id = ?')
+    if (existing) {
+      await db.get('UPDATE profiles SET photo_url = ? WHERE user_id = ?')
+    } else {
+      await db.get('INSERT INTO profiles (user_id, photo_url) VALUES (?, ?)')
+    }
+    res.json({ photo_url: photoUrl });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // get matches's dates
 router.get('/activities/:user1_id/:user2_id', async (req, res) => {

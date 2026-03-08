@@ -1,9 +1,36 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Heart, X, MapPin, Briefcase, Sparkles } from "lucide-react";
+import { getAllProfiles, type Profile } from "../api/SignInApi";
 import "./Discover.css";
 
+const GRADIENTS = [
+  "linear-gradient(135deg, #f59e0b, #ef4444)",
+  "linear-gradient(135deg, #8b5cf6, #ec4899)",
+  "linear-gradient(135deg, #06b6d4, #3b82f6)",
+  "linear-gradient(135deg, #10b981, #14b8a6)",
+  "linear-gradient(135deg, #f43f5e, #a855f7)",
+];
+
+function getInitials(p: Profile) {
+  const first = p.first_name?.[0] ?? "";
+  const last = p.last_name?.[0] ?? "";
+  return (first + last).toUpperCase() || p.email[0].toUpperCase();
+}
+
+function getAge(dob?: string) {
+  if (!dob) return null;
+  const diff = Date.now() - new Date(dob).getTime();
+  return Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000));
+}
+
 interface MatchProfile {
-  id: number;
+  id: string;
+  name: string;
+  age: number | null;
+  location: string;
+  occupation: string;
+  bio: string;
+  interests: string[];
   compatibility: number;
   gradient: string;
   name: string | undefined;
@@ -15,73 +42,84 @@ interface MatchProfile {
   initials: string | undefined;
 }
 
-const PROFILES: MatchProfile[] = [
-  {
-    id: 1,
-    name: "Sarah Kim",
-    age: 26,
-    location: "Toronto, ON",
-    occupation: "UX Designer at Meta",
-    initials: "SK",
-    bio: "Creative soul who loves designing beautiful things and exploring hidden cafés.",
-    interests: ["Coffee", "Art", "Hiking", "Photography"],
-    compatibility: 94,
-    gradient: "linear-gradient(135deg, #f59e0b, #ef4444)",
-  },
-  {
-    id: 2,
-    name: "Maya Patel",
-    age: 27,
-    location: "Waterloo, ON",
-    occupation: "Data Scientist at Google",
-    initials: "MP",
-    bio: "Bookworm by day, foodie by night. Always up for a spontaneous road trip.",
-    interests: ["Reading", "Cooking", "Travel", "Yoga"],
-    compatibility: 89,
-    gradient: "linear-gradient(135deg, #8b5cf6, #ec4899)",
-  },
-  {
-    id: 3,
-    name: "Emily Rivera",
-    age: 25,
-    location: "Vancouver, BC",
-    occupation: "Frontend Dev at Stripe",
-    initials: "ER",
-    bio: "Music festival enthusiast and weekend hiker. Let's grab a coffee and talk about life.",
-    interests: ["Music", "Fitness", "Coffee", "Coding"],
-    compatibility: 87,
-    gradient: "linear-gradient(135deg, #06b6d4, #3b82f6)",
-  },
-  {
-    id: 4,
-    name: "Jordan Lee",
-    age: 29,
-    location: "Montreal, QC",
-    occupation: "Product Manager at Shopify",
-    initials: "JL",
-    bio: "Passionate about tech, sustainability, and great conversation over good food.",
-    interests: ["Gaming", "Cooking", "Travel", "Movies"],
-    compatibility: 82,
-    gradient: "linear-gradient(135deg, #10b981, #14b8a6)",
-  },
-];
+function toMatchProfile(p: Profile, index: number): MatchProfile {
+  const name = [p.first_name, p.last_name].filter(Boolean).join(" ") || p.email;
+  const location = [p.city, p.province].filter(Boolean).join(", ");
+  const occupation = [p.job_title, p.employer].filter(Boolean).join(" at ");
+  const interests = p.interests
+    ? p.interests.split(",").map((s) => s.trim())
+    : [];
+  return {
+    id: p.user_id,
+    name,
+    age: getAge(p.date_of_birth),
+    location: location || "Unknown",
+    occupation: occupation || "Not specified",
+    bio: p.bio || "",
+    interests,
+    compatibility: Math.floor(Math.random() * 20 + 80),
+    initials: getInitials(p),
+    gradient: GRADIENTS[index % GRADIENTS.length],
+  };
+}
 
 export default function Discover() {
-  const [profiles, setProfiles] = useState(PROFILES);
+  const [profiles, setProfiles] = useState<MatchProfile[]>([]);
+  const [loading, setLoading] = useState(true);
   const [swipeDirection, setSwipeDirection] = useState<"left" | "right" | null>(
     null,
   );
 
+  useEffect(() => {
+    getAllProfiles()
+      .then((data) => setProfiles(data.map(toMatchProfile)))
+      .catch((err) => console.error("Failed to load profiles:", err))
+      .finally(() => setLoading(false));
+  }, []);
+
   const currentProfile = profiles[0];
 
   const handleSwipe = (direction: "left" | "right") => {
+    if (direction === "right" && currentProfile) {
+      // Save liked user to matches in localStorage
+      const raw = localStorage.getItem("matches");
+      const matches: Record<
+        string,
+        {
+          name: string;
+          initials: string;
+          gradient: string;
+          interests: string[];
+        }
+      > = raw ? JSON.parse(raw) : {};
+      matches[currentProfile.id] = {
+        name: currentProfile.name,
+        initials: currentProfile.initials,
+        gradient: currentProfile.gradient,
+        interests: currentProfile.interests,
+      };
+      localStorage.setItem("matches", JSON.stringify(matches));
+    }
     setSwipeDirection(direction);
     setTimeout(() => {
       setProfiles((prev) => prev.slice(1));
       setSwipeDirection(null);
     }, 300);
   };
-  
+
+  if (loading) {
+    return (
+      <div className="discover-page">
+        <div className="discover-container">
+          <div className="no-more">
+            <span className="no-more-icon">🐝</span>
+            <p>Loading profiles...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!currentProfile) {
     return (
       <div className="discover-page">
@@ -128,7 +166,8 @@ export default function Discover() {
             <div className="card-body">
               <div className="card-name-row">
                 <h2>
-                  {currentProfile.name ? "unnamed" : currentProfile.name}, {currentProfile.age}
+                  {currentProfile.name}
+                  {currentProfile.age ? `, ${currentProfile.age}` : ""}
                 </h2>
                 <div className="compat-badge">
                   <Sparkles size={14} />
