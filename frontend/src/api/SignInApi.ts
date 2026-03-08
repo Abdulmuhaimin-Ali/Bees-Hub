@@ -125,15 +125,14 @@ export async function getMatches(): Promise<Profile[]> {
 // Activities
 
 export interface Activity {
-  id: string;
   name: string;
   category: string;
-  distance: string;
+  street: string;
+  city: string;
   rating: number;
-  price: string;
-  emoji: string;
-  address: string;
-  hours: string;
+  estimated_cost_per_person: string;
+  open_until: string;
+  reason: string;
 }
 
 export async function getActivities(
@@ -144,5 +143,6 @@ export async function getActivities(
     { credentials: "include" },
   );
   if (!res.ok) throw new Error("Failed to fetch activities");
-  return res.json();
+  const data = await res.json();
+  return Array.isArray(data) ? data : [data];
 }

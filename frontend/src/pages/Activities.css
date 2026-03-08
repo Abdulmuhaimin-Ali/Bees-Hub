@@ -287,27 +287,31 @@
   background: #fff;
   border-radius: 1rem;
   padding: 1.25rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  border: 1px solid #f3f4f6;
   transition:
     transform 0.2s,
-    box-shadow 0.2s;
+    box-shadow 0.2s,
+    border-color 0.2s;
 }
 
 .activity-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.12);
+  border-color: #fde68a;
 }
 
 .activity-emoji {
-  font-size: 2.5rem;
+  font-size: 2.2rem;
   flex-shrink: 0;
   width: 60px;
   height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f9fafb;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
   border-radius: 0.75rem;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.12);
 }
 
 .activity-info {
@@ -389,20 +393,148 @@
   color: #f59e0b;
 }
 
+/* Price indicator */
+.price-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  flex-shrink: 0;
+}
+
+.price-active {
+  color: #f59e0b;
+}
+
+.price-dim {
+  color: #e5e7eb;
+}
+
+/* Star ratings */
+.stars-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.star-filled {
+  color: #f59e0b;
+  fill: #f59e0b;
+}
+
+.star-half {
+  color: #f59e0b;
+  fill: #fde68a;
+}
+
+.star-empty {
+  color: #e5e7eb;
+}
+
+.rating-number {
+  margin-left: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #92400e;
+}
+
+/* Reason section */
+.activity-reason {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.7rem;
+  background: linear-gradient(135deg, #fefce8, #fef3c7);
+  border-radius: 0.5rem;
+  border-left: 3px solid #f59e0b;
+}
+
+.activity-reason span {
+  font-size: 0.82rem;
+  color: #92400e;
+  line-height: 1.4;
+  font-style: italic;
+}
+
+.activity-reason svg {
+  color: #f59e0b;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* No activities state */
+.no-activities {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #9ca3af;
+}
+
+.no-activities svg {
+  color: #d1d5db;
+  margin-bottom: 0.75rem;
+}
+
+.no-activities p {
+  font-size: 0.9rem;
+  margin: 0;
+}
+
 .suggest-date-btn {
   margin-top: 0.75rem;
   width: 100%;
-  padding: 0.55rem;
+  padding: 0.6rem;
   background: #fef3c7;
   color: #92400e;
   border: 1.5px solid #fde68a;
-  border-radius: 0.5rem;
+  border-radius: 0.6rem;
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
+  letter-spacing: 0.01em;
 }
 
 .suggest-date-btn:hover {
-  background: #fde68a;
+  background: #f59e0b;
+  color: #fff;
+  border-color: #f59e0b;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.suggest-date-btn:active {
+  transform: translateY(0);
+}
+
+/* Responsive tweaks */
+@media (max-width: 500px) {
+  .activity-card {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .activity-emoji {
+    width: 56px;
+    height: 56px;
+    font-size: 2rem;
+  }
+
+  .activity-top {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .activity-details {
+    justify-content: center;
+  }
+
+  .activity-address {
+    justify-content: center;
+  }
+
+  .activity-reason {
+    text-align: left;
+  }
 }
