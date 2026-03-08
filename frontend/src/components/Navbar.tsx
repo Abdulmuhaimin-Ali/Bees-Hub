@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { Home, User, CalendarHeart, MessageCircle } from "lucide-react";
+import { Home, User, CalendarHeart, MessageCircle, Heart } from "lucide-react";
 import "./Navbar.css";
 
 export default function Navbar() {
@@ -27,6 +27,15 @@ export default function Navbar() {
         >
           <CalendarHeart size={20} />
           <span>Activities</span>
+        </NavLink>
+        <NavLink
+          to="/matches"
+          className={({ isActive }) =>
+            isActive ? "nav-link active" : "nav-link"
+          }
+        >
+          <Heart size={20} />
+          <span>Matches</span>
         </NavLink>
         <NavLink
           to="/chat"
