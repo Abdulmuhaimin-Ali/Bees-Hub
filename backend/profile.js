@@ -27,22 +27,69 @@ router.get('/', async (req, res) => {
   });
   
   // Get single profile
-  router.get('/:userId', async (req, res) => {
-    try {
-      const profile = await get(`
-        SELECT p.*, u.email, u.is_member
-        FROM profiles p
-        JOIN users u ON p.user_id = u.id
-        WHERE p.user_id = ?
-      `, [req.params.userId]);
-  
-      if (!profile) return res.status(404).json({ error: 'Profile not found' });
-      res.json(profile);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
+router.get('/:userId', async (req, res) => {
+  try {
+    const userId = req.params.userId;
 
+    // check user exists
+    const user = await get(
+      `SELECT id, email, is_member FROM users WHERE id = ?`,
+      [userId]
+    );
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const profile = await get(`
+      SELECT p.*, u.email, u.is_member
+      FROM profiles p
+      JOIN users u ON p.user_id = u.id
+      WHERE p.user_id = ?
+    `, [userId]);
+
+    // if profile does not exist yet → return empty profile instead of error
+    if (!profile) {
+      return res.json({
+        user_id: user.id,
+        email: user.email,
+        is_member: user.is_member,
+        first_name: "",
+        last_name: "",
+        gender: "",
+        address: "",
+        city: "",
+        province: "",
+        postal_code: "",
+        phone: "",
+        height_cm: null,
+        weight_kg: null,
+        age: null,
+        bio: "",
+        job_title: "",
+        work_type: "",
+        employer: "",
+        salary_range: "",
+        years_experience: null,
+        education: "",
+        certifications: "",
+        tech_skills: "",
+        looking_for: "",
+        preferred_gender: "",
+        preferred_age_min: null,
+        preferred_age_max: null,
+        relationship_type: "",
+        interests: ""
+      });
+    }
+
+    res.json(profile);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+  
 // Create or update profile
 router.post('/:userId', async (req, res) => {
   const { userId } = req.params;

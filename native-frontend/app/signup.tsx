@@ -1,20 +1,20 @@
+import { Ionicons } from "@expo/vector-icons";
+import { Link, router } from "expo-router";
 import React, { useState } from "react";
 import {
-  View,
+  FlatList,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  Modal,
-  FlatList,
+  View,
 } from "react-native";
-import { router, Link } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { storeUser } from "../hooks/userStore";
 import { register } from "../hooks/SignInApi";
+import { storeUser } from "../hooks/userStore";
 
 const INTERESTS = [
   "Hiking","Cooking","Gaming","Photography","Travel","Music",
@@ -136,15 +136,15 @@ export default function SignUpScreen() {
   const nextStep = () => setStep((prev) => Math.min(prev + 1, totalSteps));
   const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
 
-  const handleCreateAccount = async () => {
-    try {
-      const { user } = await register(form.email, form.password);
-      await storeUser(user);
-      router.replace("/(tabs)/discover");
-    } catch {
-      router.replace("/(tabs)/discover");
-    }
-  };
+const handleCreateAccount = async () => {
+  try {
+    const { user } = await register(form.email, form.password);
+    await storeUser(user);
+    router.replace("/signin");
+  } catch (err) {
+    console.log("Signup failed:", err);
+  }
+};
 
   const openPicker = (field: string, options: string[], title: string) =>
     setPicker({ field, options, title });
