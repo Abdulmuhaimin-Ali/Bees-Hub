@@ -192,6 +192,115 @@ export default function SignUpScreen() {
     relationshipType: "",
     dealBreakers: "",
   });
+  const [error, setError] = useState<string | null>(null);
+
+  // Helper: check if string is a number
+  const isNumber = (val: string) => /^\d+(\.\d+)?$/.test(val.trim());
+  // Helper: check if string is not a number (for name, city, etc.)
+  const isNotNumber = (val: string) =>
+    val.trim() !== "" && !/^\d+$/.test(val.trim());
+
+  // Step validation
+  function validateStep() {
+    setError(null);
+    if (step === 1) {
+      if (
+        !form.firstName ||
+        !form.lastName ||
+        !form.email ||
+        !form.password ||
+        !form.birthDate ||
+        !form.phone ||
+        !form.address ||
+        !form.city ||
+        !form.province ||
+        !form.postalCode
+      ) {
+        setError("Please fill in all required fields.");
+        return false;
+      }
+      if (!isNotNumber(form.firstName) || !isNotNumber(form.lastName)) {
+        setError("Name fields must not be numbers.");
+        return false;
+      }
+      if (!/^\S+@\S+\.\S+$/.test(form.email)) {
+        setError("Please enter a valid email address.");
+        return false;
+      }
+      if (!/^\d{3,}/.test(form.phone.replace(/\D/g, ""))) {
+        setError("Please enter a valid phone number.");
+        return false;
+      }
+      if (!isNotNumber(form.city)) {
+        setError("City must not be a number.");
+        return false;
+      }
+    }
+    if (step === 2) {
+      if (
+        !form.gender ||
+        !form.heightCm ||
+        !form.weightKg ||
+        !form.preferredGender ||
+        !form.lookingFor ||
+        !form.bio
+      ) {
+        setError("Please fill in all required fields.");
+        return false;
+      }
+      if (!isNumber(form.heightCm) || !isNumber(form.weightKg)) {
+        setError("Height and weight must be numbers.");
+        return false;
+      }
+      if (!isNotNumber(form.lookingFor)) {
+        setError("Looking For must not be a number.");
+        return false;
+      }
+    }
+    if (step === 3) {
+      if (
+        !form.occupation ||
+        !form.company ||
+        !form.workType ||
+        !form.salaryRange ||
+        !form.yearsExperience ||
+        !form.education
+      ) {
+        setError("Please fill in all required fields.");
+        return false;
+      }
+      if (!isNotNumber(form.occupation) || !isNotNumber(form.company)) {
+        setError("Occupation and company must not be numbers.");
+        return false;
+      }
+      if (!isNumber(form.yearsExperience.replace(/[^\d]/g, ""))) {
+        setError("Years of experience must be a number.");
+        return false;
+      }
+    }
+    if (step === 4) {
+      if (!form.interests.length) {
+        setError("Please select at least one interest.");
+        return false;
+      }
+    }
+    if (step === 5) {
+      if (
+        !form.preferredAgeMin ||
+        !form.preferredAgeMax ||
+        !form.relationshipType
+      ) {
+        setError("Please fill in all required fields.");
+        return false;
+      }
+      if (!isNumber(form.preferredAgeMin) || !isNumber(form.preferredAgeMax)) {
+        setError("Preferred ages must be numbers.");
+        return false;
+      }
+    }
+    // Step 6: skip for now (photos)
+    return true;
+  }
 
   const updateField = (field: string, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -213,7 +322,11 @@ export default function SignUpScreen() {
     }));
 
   const totalSteps = 6;
-  const nextStep = () => setStep((prev) => Math.min(prev + 1, totalSteps));
+  const nextStep = () => {
+    if (validateStep()) {
+      setStep((prev) => Math.min(prev + 1, totalSteps));
+    }
+  };
   const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
 
   const handleCreateAccount = async () => {
@@ -299,6 +412,17 @@ export default function SignUpScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.container}>
+          {error && (
+            <Text
+              style={{
+                color: "#ef4444",
+                marginBottom: 10,
+                textAlign: "center",
+              }}
+            >
+              {error}
+            </Text>
+          )}
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.logo}>🐝</Text>
