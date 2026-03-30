@@ -1,13 +1,12 @@
-import initSqlJs from 'sql.js'
-import fs from 'fs'
-import path from 'path'
-import {fileURLToPath} from 'url'
-
+import initSqlJs from "sql.js";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const DB_PATH = path.join(__dirname, 'itconnect.db');
+const DB_PATH = path.join(__dirname, "itconnect.db");
 let db;
 
 async function getDb() {
@@ -27,6 +26,27 @@ function saveDb() {
   if (!db) return;
   const data = db.export();
   fs.writeFileSync(DB_PATH, Buffer.from(data));
+}
+
+function ensureProfileColumns() {
+  const columns = db.exec(`PRAGMA table_info(profiles);`);
+  const existingColumns = new Set(
+    (columns[0]?.values ?? []).map((row) => row[1]),
+  );
+
+  if (!existingColumns.has("date_of_birth")) {
+    db.run(`ALTER TABLE profiles ADD COLUMN date_of_birth TEXT;`);
+  }
+
+  if (!existingColumns.has("updated_at")) {
+    db.run(
+      `ALTER TABLE profiles ADD COLUMN updated_at TEXT DEFAULT (datetime('now'));`,
+    );
+  }
+
+  if (!existingColumns.has("deal_breakers")) {
+    db.run(`ALTER TABLE profiles ADD COLUMN deal_breakers TEXT;`);
+  }
 }
 
 function initSchema() {
@@ -110,6 +130,7 @@ function initSchema() {
       FOREIGN KEY(user_id) REFERENCES users(id)
     );
   `);
+  ensureProfileColumns();
   saveDb();
 }
 
@@ -144,4 +165,4 @@ async function all(sql, params = []) {
   return rows;
 }
 
- export { getDb, run, get, all, saveDb };
+export { getDb, run, get, all, saveDb };
