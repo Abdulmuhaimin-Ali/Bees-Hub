@@ -28,8 +28,27 @@ const port = 9000;
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+const allowedOriginPatterns = [
+  /^http:\/\/localhost(?::\d+)?$/,
+  /^http:\/\/127\.0\.0\.1(?::\d+)?$/,
+  /^http:\/\/10\.0\.2\.2(?::\d+)?$/,
+  /^http:\/\/192\.168\.\d{1,3}\.\d{1,3}(?::\d+)?$/,
+  /^exp:\/\/(?:localhost|127\.0\.0\.1|10\.0\.2\.2|192\.168\.\d{1,3}\.\d{1,3})(?::\d+)?$/,
+];
+
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: (origin, callback) => {
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    const isAllowed = allowedOriginPatterns.some((pattern) => pattern.test(origin));
+    if (isAllowed) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
   credentials: true
 }));
 app.use(express.json());
@@ -387,5 +406,3 @@ res.json(result);
 app.listen(port, () => {
     console.log(`Server listening at http://localhost:${port}`);
 });
-
-

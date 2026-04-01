@@ -1,76 +1,133 @@
-import express from 'express'
-import * as db from './db.js'
+import express from "express";
+import * as db from "./db.js";
 const router = express.Router();
-import path from 'path'
-import multer from 'multer'
-import {run, get, all} from './db.js'
-
+import path from "path";
+import multer from "multer";
+import { v4 as uuidv4 } from "uuid";
+import { run, get, all } from "./db.js";
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, path.join(__dirname, './uploads')),
+  destination: (req, file, cb) => cb(null, path.join(__dirname, "./uploads")),
   filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
 });
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
 // Get all profiles
-router.get('/', async (req, res) => {
-    try {
-      const profiles = await all(`
+router.get("/", async (req, res) => {
+  try {
+    const profiles = await all(`
         SELECT p.*, u.email, u.is_member
         FROM profiles p
         JOIN users u ON p.user_id = u.id
       `);
-      res.json(profiles);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  
-  // Get single profile
-  router.get('/:userId', async (req, res) => {
-    try {
-      const profile = await get(`
+    res.json(profiles);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get single profile
+router.get("/:userId", async (req, res) => {
+  try {
+    const profile = await get(
+      `
         SELECT p.*, u.email, u.is_member
         FROM profiles p
         JOIN users u ON p.user_id = u.id
         WHERE p.user_id = ?
-      `, [req.params.userId]);
-  
-      if (!profile) return res.status(404).json({ error: 'Profile not found' });
-      res.json(profile);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
+      `,
+      [req.params.userId],
+    );
+
+    if (!profile) return res.status(404).json({ error: "Profile not found" });
+    res.json(profile);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Create or update profile
-router.post('/:userId', async (req, res) => {
+router.post("/:userId", async (req, res) => {
   const { userId } = req.params;
   const data = req.body;
 
   try {
-    const existing = await get('SELECT id FROM profiles WHERE user_id = ?', [userId]);
+    const existing = await get("SELECT id FROM profiles WHERE user_id = ?", [
+      userId,
+    ]);
 
     const fields = [
-      'first_name', 'last_name', 'gender', 'address', 'city',
-      'province', 'postal_code', 'phone', 'height_cm', 'weight_kg', 'age', 'bio',
-      'job_title', 'work_type', 'employer', 'salary_range', 'years_experience',
-      'education', 'certifications', 'tech_skills', 'looking_for', 'preferred_gender',
-      'preferred_age_min', 'preferred_age_max', 'relationship_type', 'interests'
+      "first_name",
+      "last_name",
+      "date_of_birth",
+      "gender",
+      "address",
+      "city",
+      "province",
+      "postal_code",
+      "phone",
+      "height_cm",
+      "weight_kg",
+      "age",
+      "bio",
+      "job_title",
+      "work_type",
+      "employer",
+      "salary_range",
+      "years_experience",
+      "education",
+      "certifications",
+      "tech_skills",
+      "looking_for",
+      "preferred_gender",
+      "preferred_age_min",
+      "preferred_age_max",
+      "relationship_type",
+      "deal_breakers",
+      "interests",
     ];
 
+    const normalizedData = {
+      ...data,
+      age:
+        data.age ??
+        (data.date_of_birth
+          ? Math.floor(
+              (Date.now() - new Date(data.date_of_birth).getTime()) /
+                (365.25 * 24 * 60 * 60 * 1000),
+            )
+          : null),
+    };
+
     if (existing) {
-      const setClauses = fields.map(f => `${f} = ?`).join(', ');
-      const values = [...fields.map(f => data[f] ?? null), userId];
-       await run(`UPDATE profiles SET ${setClauses}, updated_at = datetime('now') WHERE user_id = ?`, values);
+      const setClauses = fields.map((f) => `${f} = ?`).join(", ");
+      const values = [...fields.map((f) => normalizedData[f] ?? null), userId];
+      await run(
+        `UPDATE profiles SET ${setClauses}, updated_at = datetime('now') WHERE user_id = ?`,
+        values,
+      );
     } else {
-      const cols = ['user_id', ...fields].join(', ');
-      const placeholders = fields.map(() => '?').join(', ');
-      const values = [userId, ...fields.map(f => data[f] ?? null)];
-       await run(`INSERT INTO profiles (${cols}) VALUES (?, ${placeholders})`, values);
+      const cols = ["id", "user_id", ...fields, "updated_at"].join(", ");
+      const placeholders = [
+        "?",
+        "?",
+        ...fields.map(() => "?"),
+        "datetime('now')",
+      ].join(", ");
+      const values = [
+        uuidv4(),
+        userId,
+        ...fields.map((f) => normalizedData[f] ?? null),
+      ];
+      await run(
+        `INSERT INTO profiles (${cols}) VALUES (${placeholders})`,
+        values,
+      );
     }
 
-    const profile = await get('SELECT * FROM profiles WHERE user_id = ?', [userId]);
+    const profile = await get("SELECT * FROM profiles WHERE user_id = ?", [
+      userId,
+    ]);
     res.json(profile);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -78,17 +135,17 @@ router.post('/:userId', async (req, res) => {
 });
 
 // Upload photo
-router.post('/:userId/photo', upload.single('photo'), async (req, res) => {
+router.post("/:userId/photo", upload.single("photo"), async (req, res) => {
   const { userId } = req.params;
-  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+  if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
   try {
     const photoUrl = `/uploads/${req.file.filename}`;
-    const existing = await db.get('SELECT id FROM profiles WHERE user_id = ?')
+    const existing = await db.get("SELECT id FROM profiles WHERE user_id = ?");
     if (existing) {
-      await db.get('UPDATE profiles SET photo_url = ? WHERE user_id = ?')
+      await db.get("UPDATE profiles SET photo_url = ? WHERE user_id = ?");
     } else {
-      await db.get('INSERT INTO profiles (user_id, photo_url) VALUES (?, ?)')
+      await db.get("INSERT INTO profiles (user_id, photo_url) VALUES (?, ?)");
     }
     res.json({ photo_url: photoUrl });
   } catch (err) {

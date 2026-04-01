@@ -1,4 +1,17 @@
-const BASE_URL = "http://10.0.2.2:9000/api";
+import Constants from "expo-constants";
+
+function getBaseUrl() {
+  const hostUri = Constants.expoConfig?.hostUri ?? Constants.experienceUrl;
+
+  if (hostUri) {
+    const host = hostUri.replace(/^[a-z]+:\/\//, "").split(":")[0];
+    return `http://${host}:9000/api`;
+  }
+
+  return "http://10.0.2.2:9000/api";
+}
+
+const BASE_URL = getBaseUrl();
 
 // Auth
 
@@ -7,6 +20,7 @@ export async function register(email: string, password: string) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
+    credentials: "include",
   });
   if (!res.ok) {
     const err = await res.json();
@@ -23,6 +37,7 @@ export async function login(email: string, password: string) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
+    credentials: "include",
   });
   if (!res.ok) {
     const err = await res.json();
@@ -38,6 +53,7 @@ export async function logout() {
   const res = await fetch(`${BASE_URL}/auth/logout`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
   });
   if (!res.ok) throw new Error("Logout failed");
   return res.json() as Promise<{ success: boolean }>;
@@ -78,13 +94,13 @@ export interface Profile {
 }
 
 export async function getAllProfiles(): Promise<Profile[]> {
-  const res = await fetch(`${BASE_URL}/profiles`);
+  const res = await fetch(`${BASE_URL}/profiles`, { credentials: "include" });
   if (!res.ok) throw new Error("Failed to fetch profiles");
   return res.json();
 }
 
 export async function getProfile(userId: string): Promise<Profile> {
-  const res = await fetch(`${BASE_URL}/profiles/${encodeURIComponent(userId)}`);
+  const res = await fetch(`${BASE_URL}/profiles/${encodeURIComponent(userId)}`, { credentials: "include" });
   if (!res.ok) throw new Error("Failed to fetch profile");
   return res.json();
 }
@@ -94,6 +110,7 @@ export async function saveProfile(userId: string, data: Partial<Profile>): Promi
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
+    credentials: "include",
   });
   if (!res.ok) throw new Error("Failed to save profile");
   return res.json();
@@ -102,7 +119,7 @@ export async function saveProfile(userId: string, data: Partial<Profile>): Promi
 // Matches
 
 export async function getMatches(): Promise<Profile[]> {
-  const res = await fetch(`${BASE_URL}/matches`);
+  const res = await fetch(`${BASE_URL}/matches`, { credentials: "include" });
   if (!res.ok) throw new Error("Failed to fetch matches");
   return res.json();
 }
