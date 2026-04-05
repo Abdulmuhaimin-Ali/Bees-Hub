@@ -28,7 +28,7 @@ export async function register(email: string, password: string) {
   }
   return res.json() as Promise<{
     success: boolean;
-    user: { id: string; email: string; is_member: number };
+    user: { id: string; email: string; is_member: number; is_admin: number };
   }>;
 }
 
@@ -45,8 +45,48 @@ export async function login(email: string, password: string) {
   }
   return res.json() as Promise<{
     success: boolean;
-    user: { id: string; email: string; is_member: number };
+    user: { id: string; email: string; is_member: number; is_admin: number };
   }>;
+}
+
+export interface AdminDateActivity {
+  id: string;
+  activity: string;
+  location: string;
+  date_time: string;
+  status: string;
+  created_at: string;
+  match_id: string;
+  user1_email: string;
+  user2_email: string;
+}
+
+export interface AdminPortalData {
+  free_members: number;
+  paid_members: number;
+  matches_shown_contact_info: number;
+  matches_and_date_activity_count: number;
+  matches_and_date_activity: AdminDateActivity[];
+  admin_users: {
+    id: string;
+    email: string;
+    is_member: number;
+    is_admin: number;
+    created_at: string;
+  }[];
+}
+
+export async function getAdminPortalData(): Promise<AdminPortalData> {
+  const res = await fetch(`${BASE_URL}/admin/portal`, {
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const err = await res
+      .json()
+      .catch(() => ({ error: "Failed to fetch admin portal data" }));
+    throw new Error(err.error || "Failed to fetch admin portal data");
+  }
+  return res.json();
 }
 
 export async function logout() {
@@ -100,18 +140,27 @@ export async function getAllProfiles(): Promise<Profile[]> {
 }
 
 export async function getProfile(userId: string): Promise<Profile> {
-  const res = await fetch(`${BASE_URL}/profiles/${encodeURIComponent(userId)}`, { credentials: "include" });
+  const res = await fetch(
+    `${BASE_URL}/profiles/${encodeURIComponent(userId)}`,
+    { credentials: "include" },
+  );
   if (!res.ok) throw new Error("Failed to fetch profile");
   return res.json();
 }
 
-export async function saveProfile(userId: string, data: Partial<Profile>): Promise<Profile> {
-  const res = await fetch(`${BASE_URL}/profiles/${encodeURIComponent(userId)}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-    credentials: "include",
-  });
+export async function saveProfile(
+  userId: string,
+  data: Partial<Profile>,
+): Promise<Profile> {
+  const res = await fetch(
+    `${BASE_URL}/profiles/${encodeURIComponent(userId)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+      credentials: "include",
+    },
+  );
   if (!res.ok) throw new Error("Failed to save profile");
   return res.json();
 }
@@ -138,7 +187,9 @@ export interface Activity {
 }
 
 export async function getActivities(matchUserId: string): Promise<Activity[]> {
-  const res = await fetch(`${BASE_URL}/activity/${encodeURIComponent(matchUserId)}`);
+  const res = await fetch(
+    `${BASE_URL}/activity/${encodeURIComponent(matchUserId)}`,
+  );
   if (!res.ok) throw new Error("Failed to fetch activities");
   const data = await res.json();
   return Array.isArray(data) ? data : [data];

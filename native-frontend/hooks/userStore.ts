@@ -4,6 +4,7 @@ export interface StoredUser {
   id: string;
   email: string;
   is_member: number;
+  is_admin: number;
 }
 
 const USER_KEY = "beeshub_user";

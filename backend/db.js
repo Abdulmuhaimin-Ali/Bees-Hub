@@ -49,6 +49,17 @@ function ensureProfileColumns() {
   }
 }
 
+function ensureUserColumns() {
+  const columns = db.exec(`PRAGMA table_info(users);`);
+  const existingColumns = new Set(
+    (columns[0]?.values ?? []).map((row) => row[1]),
+  );
+
+  if (!existingColumns.has("is_admin")) {
+    db.run(`ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0;`);
+  }
+}
+
 function initSchema() {
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
@@ -56,6 +67,7 @@ function initSchema() {
       email TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
       is_member INTEGER DEFAULT 0,
+      is_admin INTEGER DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now'))
     );
 
@@ -130,6 +142,7 @@ function initSchema() {
       FOREIGN KEY(user_id) REFERENCES users(id)
     );
   `);
+  ensureUserColumns();
   ensureProfileColumns();
   saveDb();
 }
