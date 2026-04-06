@@ -8,11 +8,6 @@ import {
   TextInput,
   ActivityIndicator,
 } from "react-native";
-import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { clearStoredUser, getStoredUser } from "@/hooks/userStore";
-import { getProfile, saveProfile } from "@/hooks/SignInApi";
-import type { Profile } from "@/hooks/SignInApi";
 
 const INTERESTS = [
   "Hiking",
