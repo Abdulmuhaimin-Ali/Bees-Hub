@@ -123,7 +123,9 @@ export default function AdminScreen() {
         />
       </View>
 
-      <Text style={styles.sectionTitle}>Matches and Date Activity</Text>
+      {/* Couldn't find the following feature in any of our docs so removed it for sake of simplicity */}
+
+      {/* <Text style={styles.sectionTitle}>Matches and Date Activity</Text>
       {data.matches_and_date_activity.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyText}>No date activity records yet.</Text>
@@ -148,7 +150,7 @@ export default function AdminScreen() {
             </Text>
           </View>
         ))
-      )}
+      )} */}
 
       <Text style={styles.sectionTitle}>Paid Members</Text>
       {paidUsers.length === 0 ? (
