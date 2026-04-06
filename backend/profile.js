@@ -19,6 +19,7 @@ router.get("/", async (req, res) => {
         SELECT p.*, u.email, u.is_member
         FROM profiles p
         JOIN users u ON p.user_id = u.id
+        WHERE u.is_admin = 0
       `);
     res.json(profiles);
   } catch (err) {

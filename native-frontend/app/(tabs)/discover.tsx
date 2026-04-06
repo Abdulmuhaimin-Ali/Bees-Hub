@@ -6,19 +6,12 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   StyleSheet,
-  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { getAllProfiles, type Profile } from "../../hooks/SignInApi";
 import { getStoredUser } from "../../hooks/userStore";
 
-const GRADIENTS = [
-  "#f59e0b",
-  "#8b5cf6",
-  "#06b6d4",
-  "#10b981",
-  "#f43f5e",
-];
+const GRADIENTS = ["#f59e0b", "#8b5cf6", "#06b6d4", "#10b981", "#f43f5e"];
 
 function getInitials(p: Profile) {
   const first = p.first_name?.[0] ?? "";
@@ -49,7 +42,9 @@ function toMatchProfile(p: Profile, index: number): MatchProfile {
   const name = [p.first_name, p.last_name].filter(Boolean).join(" ") || p.email;
   const location = [p.city, p.province].filter(Boolean).join(", ");
   const occupation = [p.job_title, p.employer].filter(Boolean).join(" at ");
-  const interests = p.interests ? p.interests.split(",").map((s) => s.trim()) : [];
+  const interests = p.interests
+    ? p.interests.split(",").map((s) => s.trim())
+    : [];
   return {
     id: p.user_id,
     name,
@@ -72,7 +67,9 @@ export default function DiscoverScreen() {
     getStoredUser().then((user) => {
       getAllProfiles()
         .then((data) => {
-          const others = user ? data.filter((p) => p.user_id !== user.id) : data;
+          const others = user
+            ? data.filter((p) => p.user_id !== user.id)
+            : data;
           setProfiles(others.map(toMatchProfile));
         })
         .catch((err) => console.error("Failed to load profiles:", err))
@@ -99,43 +96,57 @@ export default function DiscoverScreen() {
       <View style={styles.centered}>
         <Text style={styles.emptyIcon}>🐝</Text>
         <Text style={styles.emptyTitle}>No more profiles</Text>
-        <Text style={styles.emptySubtitle}>Check back later for new matches!</Text>
+        <Text style={styles.emptySubtitle}>
+          Check back later for new matches!
+        </Text>
       </View>
     );
   }
 
   return (
     <View style={styles.page}>
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Discover</Text>
         <Text style={styles.headerSubtitle}>Find your perfect match</Text>
       </View>
 
-      {/* Profile Card */}
       <View style={styles.cardStack}>
-        {/* Next card (behind) */}
         {profiles[1] && (
           <View style={[styles.card, styles.nextCard]}>
-            <View style={[styles.cardAvatar, { backgroundColor: profiles[1].color }]}>
+            <View
+              style={[
+                styles.cardAvatar,
+                { backgroundColor: profiles[1].color },
+              ]}
+            >
               <Text style={styles.cardAvatarText}>{profiles[1].initials}</Text>
             </View>
           </View>
         )}
 
-        {/* Current card */}
         <View style={[styles.card, styles.currentCard]}>
-          <View style={[styles.cardAvatar, { backgroundColor: currentProfile.color }]}>
+          <View
+            style={[
+              styles.cardAvatar,
+              { backgroundColor: currentProfile.color },
+            ]}
+          >
             <Text style={styles.cardAvatarText}>{currentProfile.initials}</Text>
           </View>
-          <ScrollView style={styles.cardBody} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={styles.cardBody}
+            showsVerticalScrollIndicator={false}
+          >
             <View style={styles.cardNameRow}>
               <Text style={styles.cardName}>
-                {currentProfile.name}{currentProfile.age ? `, ${currentProfile.age}` : ""}
+                {currentProfile.name}
+                {currentProfile.age ? `, ${currentProfile.age}` : ""}
               </Text>
               <View style={styles.compatBadge}>
                 <Ionicons name="sparkles" size={13} color="#b45309" />
-                <Text style={styles.compatText}>{currentProfile.compatibility}%</Text>
+                <Text style={styles.compatText}>
+                  {currentProfile.compatibility}%
+                </Text>
               </View>
             </View>
             <View style={styles.cardMeta}>
@@ -160,12 +171,17 @@ export default function DiscoverScreen() {
         </View>
       </View>
 
-      {/* Action Buttons */}
       <View style={styles.actionButtons}>
-        <TouchableOpacity style={[styles.actionBtn, styles.passBtn]} onPress={handleSwipe}>
+        <TouchableOpacity
+          style={[styles.actionBtn, styles.passBtn]}
+          onPress={handleSwipe}
+        >
           <Ionicons name="close" size={30} color="#ef4444" />
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.actionBtn, styles.likeBtn]} onPress={handleSwipe}>
+        <TouchableOpacity
+          style={[styles.actionBtn, styles.likeBtn]}
+          onPress={handleSwipe}
+        >
           <Ionicons name="heart" size={28} color="#10b981" />
         </TouchableOpacity>
       </View>
@@ -175,14 +191,29 @@ export default function DiscoverScreen() {
 
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: "#f9fafb" },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#f9fafb" },
+  centered: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f9fafb",
+  },
   emptyIcon: { fontSize: 48, marginBottom: 12 },
-  emptyTitle: { fontSize: 20, fontWeight: "bold", color: "#1f2937", marginBottom: 6 },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#1f2937",
+    marginBottom: 6,
+  },
   emptySubtitle: { fontSize: 14, color: "#6b7280" },
   header: { alignItems: "center", paddingTop: 60, paddingBottom: 12 },
   headerTitle: { fontSize: 24, fontWeight: "bold", color: "#1f2937" },
   headerSubtitle: { fontSize: 13, color: "#6b7280", marginTop: 2 },
-  cardStack: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 20 },
+  cardStack: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 20,
+  },
   card: {
     width: "100%",
     backgroundColor: "#fff",
@@ -203,11 +234,7 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.95 }],
   },
   currentCard: { maxHeight: 480 },
-  cardAvatar: {
-    height: 180,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  cardAvatar: { height: 180, alignItems: "center", justifyContent: "center" },
   cardAvatarText: { fontSize: 52, fontWeight: "bold", color: "#fff" },
   cardBody: { padding: 16 },
   cardNameRow: {
@@ -231,10 +258,17 @@ const styles = StyleSheet.create({
   metaItem: { flexDirection: "row", alignItems: "center", gap: 4 },
   metaText: { fontSize: 13, color: "#6b7280" },
   cardBio: { fontSize: 13, color: "#374151", lineHeight: 19, marginBottom: 10 },
-  cardInterests: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 8 },
+  cardInterests: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginBottom: 8,
+  },
   interestTag: {
-    backgroundColor: "#f3f4f6", borderRadius: 12,
-    paddingHorizontal: 10, paddingVertical: 4,
+    backgroundColor: "#f3f4f6",
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
   interestTagText: { fontSize: 12, color: "#374151" },
   actionButtons: {
@@ -244,8 +278,11 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   actionBtn: {
-    width: 60, height: 60, borderRadius: 30,
-    alignItems: "center", justifyContent: "center",
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: "#fff",
     shadowColor: "#000",
     shadowOpacity: 0.1,

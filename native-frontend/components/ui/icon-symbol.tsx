@@ -17,6 +17,7 @@ const MAPPING = {
   "house.fill": "home",
   "calendar.heart": "event",
   "person.fill": "person",
+  "shield.fill": "admin-panel-settings",
   magnifyingglass: "search",
   "favorite.fill": "favorite",
   "paperplane.fill": "send",

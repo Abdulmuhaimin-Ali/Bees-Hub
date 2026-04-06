@@ -25,7 +25,7 @@ export default function SignInScreen() {
     try {
       const { user } = await login(email, password);
       await storeUser(user);
-      router.replace("/(tabs)/discover");
+      router.replace(user.is_admin ? "/(tabs)/admin" : "/(tabs)/discover");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login failed");
     }
@@ -36,7 +36,10 @@ export default function SignInScreen() {
       style={styles.page}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.container}>
           <View style={styles.header}>
             <Text style={styles.logo}>🐝</Text>
@@ -88,7 +91,7 @@ export default function SignInScreen() {
           </View>
 
           <Text style={styles.signupLink}>
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link href="/signup" style={styles.linkText}>
               Sign up
             </Link>

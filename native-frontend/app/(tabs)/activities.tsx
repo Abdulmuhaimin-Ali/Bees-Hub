@@ -8,34 +8,39 @@ import {
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { getMatches, getActivities, type Activity, type Profile } from "../../hooks/SignInApi";
+import {
+  getMatches,
+  getActivities,
+  type Activity,
+  type Profile,
+} from "../../hooks/SignInApi";
 
-const GRADIENTS = [
-  "#f59e0b", "#8b5cf6", "#06b6d4", "#10b981", "#f43f5e",
-];
+const GRADIENTS = ["#f59e0b", "#8b5cf6", "#06b6d4", "#10b981", "#f43f5e"];
 
 const CATEGORY_EMOJIS: Record<string, string> = {
   "Outdoor Recreation": "🌿",
   "Food & Drink": "🍽️",
   "Arts & Culture": "🎨",
-  "Entertainment": "🎭",
-  "Nightlife": "🌙",
+  Entertainment: "🎭",
+  Nightlife: "🌙",
   "Sports & Fitness": "⚽",
-  "Shopping": "🛍️",
-  "Wellness": "🧘",
-  "Music": "🎵",
-  "Adventure": "🏔️",
+  Shopping: "🛍️",
+  Wellness: "🧘",
+  Music: "🎵",
+  Adventure: "🏔️",
   "Coffee & Café": "☕",
-  "Movies": "🎬",
-  "Gaming": "🎮",
-  "Beach": "🏖️",
-  "Travel": "✈️",
+  Movies: "🎬",
+  Gaming: "🎮",
+  Beach: "🏖️",
+  Travel: "✈️",
 };
 
 function getCategoryEmoji(category: string): string {
   if (CATEGORY_EMOJIS[category]) return CATEGORY_EMOJIS[category];
   const key = Object.keys(CATEGORY_EMOJIS).find(
-    (k) => category.toLowerCase().includes(k.toLowerCase()) || k.toLowerCase().includes(category.toLowerCase())
+    (k) =>
+      category.toLowerCase().includes(k.toLowerCase()) ||
+      k.toLowerCase().includes(category.toLowerCase()),
   );
   return key ? CATEGORY_EMOJIS[key] : "📍";
 }
@@ -45,7 +50,9 @@ function renderPriceLevel(price: string) {
   return (
     <View style={{ flexDirection: "row" }}>
       {Array.from({ length: 4 }, (_, i) => (
-        <Text key={i} style={i < count ? styles.priceActive : styles.priceDim}>$</Text>
+        <Text key={i} style={i < count ? styles.priceActive : styles.priceDim}>
+          $
+        </Text>
       ))}
     </View>
   );
@@ -77,16 +84,25 @@ interface MatchEntry {
 
 function profileToMatch(p: Profile, index: number): [string, MatchEntry] {
   const name = [p.first_name, p.last_name].filter(Boolean).join(" ") || p.email;
-  const initials = ((p.first_name?.[0] ?? "") + (p.last_name?.[0] ?? "")).toUpperCase() || p.email[0].toUpperCase();
-  const interests = p.interests ? p.interests.split(",").map((s) => s.trim()) : [];
-  return [p.user_id, { name, initials, color: GRADIENTS[index % GRADIENTS.length], interests }];
+  const initials =
+    ((p.first_name?.[0] ?? "") + (p.last_name?.[0] ?? "")).toUpperCase() ||
+    p.email[0].toUpperCase();
+  const interests = p.interests
+    ? p.interests.split(",").map((s) => s.trim())
+    : [];
+  return [
+    p.user_id,
+    { name, initials, color: GRADIENTS[index % GRADIENTS.length], interests },
+  ];
 }
 
 export default function ActivitiesScreen() {
   const [matches, setMatches] = useState<Record<string, MatchEntry>>({});
   const [loadingMatches, setLoadingMatches] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [activitiesMap, setActivitiesMap] = useState<Record<string, Activity[]>>({});
+  const [activitiesMap, setActivitiesMap] = useState<
+    Record<string, Activity[]>
+  >({});
   const [loadingActivities, setLoadingActivities] = useState(false);
 
   useEffect(() => {
@@ -104,7 +120,9 @@ export default function ActivitiesScreen() {
     if (activitiesMap[matchId]) return;
     setLoadingActivities(true);
     getActivities(matchId)
-      .then((data) => setActivitiesMap((prev) => ({ ...prev, [matchId]: data })))
+      .then((data) =>
+        setActivitiesMap((prev) => ({ ...prev, [matchId]: data })),
+      )
       .catch((err) => console.error("Failed to fetch activities:", err))
       .finally(() => setLoadingActivities(false));
   };
@@ -115,13 +133,13 @@ export default function ActivitiesScreen() {
 
   return (
     <ScrollView style={styles.page} contentContainerStyle={styles.content}>
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Date Activities</Text>
-        <Text style={styles.headerSubtitle}>Pick a match to see couple activity ideas</Text>
+        <Text style={styles.headerSubtitle}>
+          Pick a match to see couple activity ideas
+        </Text>
       </View>
 
-      {/* Matches Row */}
       <View style={styles.matchesSection}>
         <View style={styles.matchesTitle}>
           <Ionicons name="heart-outline" size={16} color="#374151" />
@@ -130,9 +148,15 @@ export default function ActivitiesScreen() {
         {loadingMatches ? (
           <ActivityIndicator color="#f59e0b" style={{ marginTop: 12 }} />
         ) : matchIds.length === 0 ? (
-          <Text style={styles.noMatchesText}>No matches yet — keep swiping on Discover!</Text>
+          <Text style={styles.noMatchesText}>
+            No matches yet — keep swiping on Discover!
+          </Text>
         ) : (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.matchesScroll}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.matchesScroll}
+          >
             {matchIds.map((id) => {
               const m = matches[id];
               return (
@@ -141,11 +165,13 @@ export default function ActivitiesScreen() {
                   style={styles.matchBubble}
                   onPress={() => fetchActivities(id)}
                 >
-                  <View style={[
-                    styles.bubbleAvatar,
-                    { backgroundColor: m.color },
-                    selectedId === id && styles.bubbleAvatarActive,
-                  ]}>
+                  <View
+                    style={[
+                      styles.bubbleAvatar,
+                      { backgroundColor: m.color },
+                      selectedId === id && styles.bubbleAvatarActive,
+                    ]}
+                  >
                     <Text style={styles.bubbleInitials}>{m.initials}</Text>
                   </View>
                   <Text style={styles.bubbleName}>{m.name.split(" ")[0]}</Text>
@@ -156,13 +182,13 @@ export default function ActivitiesScreen() {
         )}
       </View>
 
-      {/* Activities for selected match */}
       {selectedMatch && (
         <View>
           <View style={styles.selectedMatchHeader}>
             <Ionicons name="people" size={15} color="#374151" />
             <Text style={styles.selectedMatchText}>
-              Activities with <Text style={{ fontWeight: "bold" }}>{selectedMatch.name}</Text>
+              Activities with{" "}
+              <Text style={{ fontWeight: "bold" }}>{selectedMatch.name}</Text>
             </Text>
           </View>
           {selectedMatch.interests.length > 0 && (
@@ -174,30 +200,41 @@ export default function ActivitiesScreen() {
               ))}
             </View>
           )}
-
           {loadingActivities ? (
             <ActivityIndicator color="#f59e0b" style={{ marginTop: 16 }} />
           ) : activities.length === 0 ? (
             <View style={styles.noActivities}>
               <Text style={styles.noActivitiesIcon}>✨</Text>
-              <Text style={styles.noActivitiesText}>No activities found for this match yet.</Text>
+              <Text style={styles.noActivitiesText}>
+                No activities found for this match yet.
+              </Text>
             </View>
           ) : (
             <View style={styles.activitiesList}>
               {activities.map((activity, idx) => (
                 <View key={idx} style={styles.activityCard}>
-                  <Text style={styles.activityEmoji}>{getCategoryEmoji(activity.category)}</Text>
+                  <Text style={styles.activityEmoji}>
+                    {getCategoryEmoji(activity.category)}
+                  </Text>
                   <View style={styles.activityInfo}>
                     <View style={styles.activityTop}>
                       <Text style={styles.activityName}>{activity.name}</Text>
                       {renderPriceLevel(activity.estimated_cost_per_person)}
                     </View>
-                    <Text style={styles.activityCategory}>{activity.category}</Text>
+                    <Text style={styles.activityCategory}>
+                      {activity.category}
+                    </Text>
                     <View style={styles.activityDetails}>
                       {renderStars(activity.rating)}
                       <View style={styles.detailItem}>
-                        <Ionicons name="time-outline" size={12} color="#6b7280" />
-                        <Text style={styles.detailText}>Open until {activity.open_until}</Text>
+                        <Ionicons
+                          name="time-outline"
+                          size={12}
+                          color="#6b7280"
+                        />
+                        <Text style={styles.detailText}>
+                          Open until {activity.open_until}
+                        </Text>
                       </View>
                     </View>
                     <View style={styles.activityReason}>
@@ -205,12 +242,15 @@ export default function ActivitiesScreen() {
                       <Text style={styles.reasonText}>{activity.reason}</Text>
                     </View>
                     <View style={styles.activityAddress}>
-                      <Ionicons name="location-sharp" size={12} color="#6b7280" />
-                      <Text style={styles.addressText}>{activity.street}, {activity.city}</Text>
+                      <Ionicons
+                        name="location-sharp"
+                        size={12}
+                        color="#6b7280"
+                      />
+                      <Text style={styles.addressText}>
+                        {activity.street}, {activity.city}
+                      </Text>
                     </View>
-                    <TouchableOpacity style={styles.suggestBtn}>
-                      <Text style={styles.suggestBtnText}>Suggest This Date</Text>
-                    </TouchableOpacity>
                   </View>
                 </View>
               ))}
@@ -229,28 +269,50 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 22, fontWeight: "bold", color: "#1f2937" },
   headerSubtitle: { fontSize: 13, color: "#6b7280", marginTop: 2 },
   matchesSection: { marginBottom: 16 },
-  matchesTitle: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10 },
+  matchesTitle: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 10,
+  },
   matchesTitleText: { fontSize: 15, fontWeight: "600", color: "#374151" },
   noMatchesText: { fontSize: 13, color: "#6b7280", marginTop: 8 },
   matchesScroll: { flexDirection: "row" },
   matchBubble: { alignItems: "center", marginRight: 16 },
   bubbleAvatar: {
-    width: 52, height: 52, borderRadius: 26,
-    alignItems: "center", justifyContent: "center",
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: 4,
   },
   bubbleAvatarActive: { borderWidth: 3, borderColor: "#f59e0b" },
   bubbleInitials: { fontSize: 18, fontWeight: "bold", color: "#fff" },
   bubbleName: { fontSize: 12, color: "#374151" },
   selectedMatchHeader: {
-    flexDirection: "row", alignItems: "center", gap: 6,
-    backgroundColor: "#fde68a", padding: 10, borderRadius: 10, marginBottom: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#fde68a",
+    padding: 10,
+    borderRadius: 10,
+    marginBottom: 8,
   },
   selectedMatchText: { fontSize: 13, color: "#374151" },
-  sharedInterests: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 12 },
+  sharedInterests: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginBottom: 12,
+  },
   interestChip: {
-    backgroundColor: "#fff", borderRadius: 12, borderWidth: 1,
-    borderColor: "#d1d5db", paddingHorizontal: 10, paddingVertical: 4,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
   interestChipText: { fontSize: 12, color: "#374151" },
   noActivities: { alignItems: "center", paddingVertical: 24 },
@@ -258,32 +320,57 @@ const styles = StyleSheet.create({
   noActivitiesText: { fontSize: 14, color: "#6b7280" },
   activitiesList: { gap: 12 },
   activityCard: {
-    backgroundColor: "#fff", borderRadius: 16, padding: 14,
-    shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 8,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 14,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
     alignItems: "center",
   },
   activityEmoji: { fontSize: 32, marginBottom: 10 },
   activityInfo: { width: "100%" },
-  activityTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 2 },
-  activityName: { fontSize: 15, fontWeight: "bold", color: "#1f2937", flex: 1, marginRight: 8 },
+  activityTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 2,
+  },
+  activityName: {
+    fontSize: 15,
+    fontWeight: "bold",
+    color: "#1f2937",
+    flex: 1,
+    marginRight: 8,
+  },
   priceActive: { fontSize: 13, color: "#f59e0b", fontWeight: "bold" },
   priceDim: { fontSize: 13, color: "#d1d5db" },
   activityCategory: { fontSize: 12, color: "#6b7280", marginBottom: 6 },
-  activityDetails: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 8 },
+  activityDetails: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 8,
+  },
   detailItem: { flexDirection: "row", alignItems: "center", gap: 3 },
   detailText: { fontSize: 12, color: "#6b7280" },
   ratingNum: { fontSize: 12, color: "#374151", marginLeft: 4 },
   activityReason: {
-    flexDirection: "row", alignItems: "flex-start", gap: 4,
-    backgroundColor: "#fde68a", borderRadius: 8, padding: 8, marginBottom: 8,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 4,
+    backgroundColor: "#fde68a",
+    borderRadius: 8,
+    padding: 8,
+    marginBottom: 8,
   },
   reasonText: { fontSize: 12, color: "#b45309", flex: 1 },
-  activityAddress: { flexDirection: "row", alignItems: "center", gap: 3, marginBottom: 10 },
-  addressText: { fontSize: 12, color: "#6b7280" },
-  suggestBtn: {
-    backgroundColor: "#f59e0b", borderRadius: 10, paddingVertical: 10,
+  activityAddress: {
+    flexDirection: "row",
     alignItems: "center",
+    gap: 3,
+    marginBottom: 10,
   },
-  suggestBtnText: { color: "#fff", fontWeight: "bold", fontSize: 14 },
+  addressText: { fontSize: 12, color: "#6b7280" },
 });
