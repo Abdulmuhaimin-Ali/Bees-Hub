@@ -12,8 +12,10 @@ import { Ionicons } from "@expo/vector-icons";
 import {
   getAdminPortalData,
   getProfile,
+  getPaidUsers,
   type AdminPortalData,
   type Profile,
+  type PaidUser,
 } from "@/hooks/SignInApi";
 import { getStoredUser } from "@/hooks/userStore";
 
@@ -26,6 +28,7 @@ export default function AdminScreen() {
   const [selectedUserLoading, setSelectedUserLoading] = useState(false);
   const [selectedUserError, setSelectedUserError] = useState("");
   const [showFullProfile, setShowFullProfile] = useState(false);
+  const [paidUsers, setPaidUsers] = useState<PaidUser[]>([]);
 
   const handleUserPress = async (userId: string) => {
     setSelectedUserLoading(true);
@@ -53,8 +56,11 @@ export default function AdminScreen() {
         return;
       }
 
-      getAdminPortalData()
-        .then((portalData) => setData(portalData))
+      Promise.all([getAdminPortalData(), getPaidUsers()])
+        .then(([portalData, paid]) => {
+          setData(portalData);
+          setPaidUsers(paid);
+        })
         .catch((err: unknown) => {
           const message =
             err instanceof Error ? err.message : "Failed to load admin portal";
@@ -115,16 +121,6 @@ export default function AdminScreen() {
           value={data.paid_members}
           icon="card-outline"
         />
-        <MetricCard
-          label="Matches Shown Contact Info"
-          value={data.matches_shown_contact_info}
-          icon="call-outline"
-        />
-        <MetricCard
-          label="Matches and Date Activity"
-          value={data.matches_and_date_activity_count}
-          icon="calendar-outline"
-        />
       </View>
 
       <Text style={styles.sectionTitle}>Matches and Date Activity</Text>
@@ -151,6 +147,26 @@ export default function AdminScreen() {
               Status: {item.status || "scheduled"}
             </Text>
           </View>
+        ))
+      )}
+
+      <Text style={styles.sectionTitle}>Paid Members</Text>
+      {paidUsers.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyText}>No paid members yet.</Text>
+        </View>
+      ) : (
+        paidUsers.map((user) => (
+          <TouchableOpacity
+            key={user.id}
+            style={styles.userCard}
+            onPress={() => handleUserPress(user.id)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.userEmail}>{user.email}</Text>
+            <Text style={styles.userLine}>ID: {user.id}</Text>
+            <Text style={styles.userLine}>Joined: {user.created_at}</Text>
+          </TouchableOpacity>
         ))
       )}
 

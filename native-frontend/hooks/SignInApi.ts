@@ -89,6 +89,39 @@ export async function getAdminPortalData(): Promise<AdminPortalData> {
   return res.json();
 }
 
+export interface PaidUser {
+  id: string;
+  email: string;
+  is_member: number;
+  is_admin: number;
+  created_at: string;
+}
+
+export async function getPaidUsers(): Promise<PaidUser[]> {
+  const res = await fetch(`${BASE_URL}/admin/paid-users`, {
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const err = await res
+      .json()
+      .catch(() => ({ error: "Failed to fetch paid users" }));
+    throw new Error(err.error || "Failed to fetch paid users");
+  }
+  return res.json();
+}
+
+export async function subscribe(): Promise<{ success: boolean }> {
+  const res = await fetch(`${BASE_URL}/subscribe`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: "Subscribe failed" }));
+    throw new Error(err.error || "Subscribe failed");
+  }
+  return res.json();
+}
+
 export async function logout() {
   const res = await fetch(`${BASE_URL}/auth/logout`, {
     method: "POST",

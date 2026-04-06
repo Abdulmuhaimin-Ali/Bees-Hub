@@ -245,6 +245,31 @@ app.get("/api/admin/portal", requireAdmin, async (req, res) => {
   }
 });
 
+app.get("/api/admin/paid-users", requireAdmin, async (req, res) => {
+  try {
+    const paidUsers = await all(
+      `SELECT id, email, is_member, is_admin, created_at
+       FROM users
+       WHERE is_admin = 0 AND is_member = 1
+       ORDER BY created_at ASC`,
+    );
+    res.json(paidUsers);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post("/api/subscribe", requireAuth, async (req, res) => {
+  try {
+    await run("UPDATE users SET is_member = 1 WHERE id = ?", [
+      req.session.userId,
+    ]);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // profile routes
 app.use("/api/profiles", router);
 
