@@ -15,6 +15,7 @@ type IconSymbolName = string;
  */
 const MAPPING = {
   "house.fill": "home",
+  "heart.fill": "favorite",
   "calendar.heart": "event",
   "person.fill": "person",
   "shield.fill": "admin-panel-settings",

@@ -8,12 +8,14 @@ import {
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import {
   getMatches,
   getActivities,
   type Activity,
   type Profile,
 } from "../../hooks/SignInApi";
+import { getStoredUser } from "../../hooks/userStore";
 
 const GRADIENTS = ["#f59e0b", "#8b5cf6", "#06b6d4", "#10b981", "#f43f5e"];
 
@@ -97,6 +99,8 @@ function profileToMatch(p: Profile, index: number): [string, MatchEntry] {
 }
 
 export default function ActivitiesScreen() {
+  const router = useRouter();
+  const [isPaid, setIsPaid] = useState<boolean | null>(null);
   const [matches, setMatches] = useState<Record<string, MatchEntry>>({});
   const [loadingMatches, setLoadingMatches] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -106,6 +110,15 @@ export default function ActivitiesScreen() {
   const [loadingActivities, setLoadingActivities] = useState(false);
 
   useEffect(() => {
+    getStoredUser().then((u) => setIsPaid(u?.is_member === 1 ? true : false));
+  }, []);
+
+  useEffect(() => {
+    if (isPaid === null) return;
+    if (!isPaid) {
+      setLoadingMatches(false);
+      return;
+    }
     getMatches()
       .then((profiles) => {
         const entries = profiles.map(profileToMatch);
@@ -113,7 +126,7 @@ export default function ActivitiesScreen() {
       })
       .catch((err) => console.error("Failed to fetch matches:", err))
       .finally(() => setLoadingMatches(false));
-  }, []);
+  }, [isPaid]);
 
   const fetchActivities = (matchId: string) => {
     setSelectedId(matchId);
@@ -130,6 +143,42 @@ export default function ActivitiesScreen() {
   const matchIds = Object.keys(matches);
   const selectedMatch = selectedId ? matches[selectedId] : null;
   const activities = selectedId ? (activitiesMap[selectedId] ?? []) : [];
+
+  if (isPaid === null) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+        <ActivityIndicator size="large" color="#fbbf24" />
+      </View>
+    );
+  }
+
+  if (!isPaid) {
+    return (
+      <View style={styles.paywallContainer}>
+        <Text style={styles.paywallHoneycomb}>🍯</Text>
+        <Text style={styles.paywallBee}>🐝</Text>
+        <Text style={styles.paywallTitle}>Members Only</Text>
+        <Text style={styles.paywallSubtitle}>
+          This hive is exclusive to paid members.{"\n"}We're sorry — the Matches
+          tab is reserved for those who've joined the colony.
+        </Text>
+        <View style={styles.paywallDivider} />
+        <Text style={styles.paywallPerks}>✨ Unlock with a membership:</Text>
+        <View style={styles.paywallPerksList}>
+          <Text style={styles.paywallPerk}>💛 View all your matches</Text>
+          <Text style={styles.paywallPerk}>📍 Get curated date activity ideas</Text>
+          <Text style={styles.paywallPerk}>🔓 Full access to contact info</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.paywallButton}
+          onPress={() => router.push("/(tabs)/profile")}
+        >
+          <Ionicons name="star" size={16} color="#fff" />
+          <Text style={styles.paywallButtonText}>Upgrade My Plan</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.page} contentContainerStyle={styles.content}>
@@ -373,4 +422,62 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   addressText: { fontSize: 12, color: "#6b7280" },
+  // Paywall
+  paywallContainer: {
+    flex: 1,
+    backgroundColor: "#fffbeb",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 32,
+    paddingVertical: 48,
+  },
+  paywallHoneycomb: { fontSize: 64, marginBottom: -16 },
+  paywallBee: { fontSize: 48, marginBottom: 20 },
+  paywallTitle: {
+    fontSize: 26,
+    fontWeight: "800",
+    color: "#92400e",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  paywallSubtitle: {
+    fontSize: 15,
+    color: "#78350f",
+    textAlign: "center",
+    lineHeight: 22,
+    marginBottom: 20,
+  },
+  paywallDivider: {
+    width: 48,
+    height: 3,
+    backgroundColor: "#fbbf24",
+    borderRadius: 2,
+    marginBottom: 20,
+  },
+  paywallPerks: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#92400e",
+    marginBottom: 10,
+  },
+  paywallPerksList: { alignSelf: "stretch", gap: 8, marginBottom: 32 },
+  paywallPerk: { fontSize: 14, color: "#78350f", textAlign: "center" },
+  paywallButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#f59e0b",
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 50,
+    shadowColor: "#f59e0b",
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  paywallButtonText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#fff",
+  },
 });

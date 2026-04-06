@@ -246,112 +246,118 @@ app.get("/api/admin/portal", requireAdmin, async (req, res) => {
 });
 
 app.get("/api/admin/paid-users", requireAdmin, async (req, res) => {
-  try {
-    const paidUsers = await all(
-      `SELECT id, email, is_member, is_admin, created_at
-       FROM users
-       WHERE is_admin = 0 AND is_member = 1
-       ORDER BY created_at ASC`,
-    );
-    res.json(paidUsers);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
+    try {
+          const paidUsers = await all(
+            `SELECT id, email, is_member, is_admin, created_at
+            FROM users
+            WHERE is_admin = 0 AND is_member = 1
+            ORDER BY created_at ASC`,
+          );
+          res.json(paidUsers);
+        } catch (e) {
+          res.status(500).json({ error: e.message });
+        }
+      });
 
-app.post("/api/subscribe", requireAuth, async (req, res) => {
-  try {
-    await run("UPDATE users SET is_member = 1 WHERE id = ?", [
-      req.session.userId,
-    ]);
-    res.json({ success: true });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
+      app.post("/api/subscribe", requireAuth, async (req, res) => {
+        try {
+          await run("UPDATE users SET is_member = 1 WHERE id = ?", [
+            req.session.userId,
+          ]);
+          res.json({ success: true });
+        } catch (e) {
+          res.status(500).json({ error: e.message });
+        }
+      });
 
-// profile routes
-app.use("/api/profiles", router);
+      // profile routes
+      app.use("/api/profiles", router);
 
-// Matching
-app.get("/api/matches", requireMember, async (req, res) => {
-  const baseUrl = `${req.protocol}://${req.get("host")}`;
+      // Matching
+      app.get("/api/matches", requireMember, async (req, res) => {
 
-  console.log("userId error: ", req.session.userId);
-  // get user profile.
-  const currentUserRes = await fetch(
-    `${baseUrl}/api/profiles/${req.session.userId}`,
-  );
+        try{
+        const baseUrl = `${req.protocol}://${req.get("host")}`;
 
-  const currentUser = await currentUserRes.json();
+        console.log("userId error: ", req.session.userId);
+        // get user profile.
+        const currentUserRes = await fetch(
+          `${baseUrl}/api/profiles/${req.session.userId}`,
+        );
 
-  // get others profiles
-  const allProfilesRes = await fetch(`${baseUrl}/api/profiles/`);
-  const allProfiles = await allProfilesRes.json();
+        const currentUser = await currentUserRes.json();
 
-  // send it to ai agent
-  const prompt = `
-      You are a matchmaking assistant. Based on the current user's profile, 
-      recommend the best matching users from the list below.
+        // get others profiles
+        const allProfilesRes = await fetch(`${baseUrl}/api/profiles/`);
+        const allProfiles = await allProfilesRes.json();
 
-      Current user:
-      ${JSON.stringify(currentUser)}
+        // send it to ai agent
+        const prompt = `
+            You are a matchmaking assistant. Based on the current user's profile, 
+            recommend the best matching users from the list below.
 
-      Other users:
-      ${JSON.stringify(allProfiles)}
+            Current user:
+            ${JSON.stringify(currentUser)}
 
-      Return ONLY a string of user IDs seprated by a ',' in order of best match, like:
-      "4e3jkf, djkajdfj, ajkdjfkj". The userId is stored in the user_id field.
-      No explanation, no markdown, just the raw JSON array.
-    `;
+            Other users:
+            ${JSON.stringify(allProfiles)}
 
-  const aiRes = await fetch(
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        // Swapped the Anthropic header for the Google one
-        "x-goog-api-key": process.env.GEMINI_API_KEY,
-      },
-      body: JSON.stringify({
-        // 'messages' becomes 'contents' and 'parts'
-        contents: [
+            Return ONLY a string of user IDs seprated by a ',' in order of best match, like:
+            "4e3jkf, djkajdfj, ajkdjfkj". The userId is stored in the user_id field.
+            No explanation, no markdown, just the raw JSON array.
+          `;
+
+        const aiRes = await fetch(
+          "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
           {
-            role: "user",
-            parts: [{ text: prompt }],
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              // Swapped the Anthropic header for the Google one
+              "x-goog-api-key": process.env.GEMINI_API_KEY,
+            },
+            body: JSON.stringify({
+              // 'messages' becomes 'contents' and 'parts'
+              contents: [
+                {
+                  role: "user",
+                  parts: [{ text: prompt }],
+                },
+              ],
+              // 'max_tokens' moves inside 'generationConfig'
+              generationConfig: {
+                maxOutputTokens: 1024,
+              },
+            }),
           },
-        ],
-        // 'max_tokens' moves inside 'generationConfig'
-        generationConfig: {
-          maxOutputTokens: 1024,
-        },
-      }),
-    },
-  );
+        );
 
-  const data = await aiRes.json();
+        const data = await aiRes.json();
 
-  if (!aiRes.ok) {
-    console.error("Gemini API Error:", data);
-    throw new Error(`API returned status ${aiRes.status}`);
-  }
+        if (!aiRes.ok) {
+          console.error("Gemini API Error:", data);
+          throw new Error(`API returned status ${aiRes.status}`);
+        }
 
-  const text = data.candidates[0].content.parts[0].text.trim();
-  console.log("returned ids from ai agent", text);
+        const text = data.candidates[0].content.parts[0].text.trim();
+        console.log("returned ids from ai agent", text);
 
-  const ids = text.split(",").map((v) => v.trim());
-  const placeholder = ids.map(() => "?").join(",");
+        const ids = text.split(",").map((v) => v.trim());
+        const placeholder = ids.map(() => "?").join(",");
 
-  const profiles = await all(
-    `SELECT p.*, u.email, u.is_member
-       FROM profiles p
-       JOIN users u ON p.user_id = u.id
-       WHERE u.is_admin = 0
-         AND p.user_id IN (${placeholder})`,
-    ids,
-  );
-  res.json(profiles);
+        const profiles = await all(
+          `SELECT p.*, u.email, u.is_member
+            FROM profiles p
+            JOIN users u ON p.user_id = u.id
+            WHERE u.is_admin = 0
+              AND p.user_id IN (${placeholder})`,
+          ids,
+        );
+        res.json(profiles);
+    }catch (e) {                                                         
+      console.error("Matches error:", e);
+      res.status(500).json({ error: e.message });                         
+    } 
 });
 
 app.get("/api/activity/:userId", async (req, res) => {

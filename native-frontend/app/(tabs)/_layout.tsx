@@ -67,10 +67,10 @@ export default function TabLayout() {
       <Tabs.Screen
         name="activities"
         options={{
-          title: "Activities",
+          title: "Matches",
           href: user?.is_admin ? null : undefined,
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="calendar.heart" color={color} />
+            <IconSymbol size={28} name="heart.fill" color={color} />
           ),
         }}
       />
