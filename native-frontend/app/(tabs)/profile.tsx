@@ -1,12 +1,17 @@
-import React, { useState, useEffect } from "react";
+import type { Profile } from "@/hooks/SignInApi";
+import { getProfile, saveProfile } from "@/hooks/SignInApi";
+import { clearStoredUser, getStoredUser } from "@/hooks/userStore";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  TextInput,
   ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 const INTERESTS = [
@@ -50,6 +55,7 @@ function initials(first?: string, last?: string) {
 
 export default function ProfileScreen() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [isMember, setIsMember] = useState<boolean | null>(null);
   const [userId, setUserId] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -91,8 +97,11 @@ export default function ProfileScreen() {
         router.replace("/signin");
         return;
       }
+
       setIsAdmin(user.is_admin === 1);
+      setIsMember(user.is_member === 1 ? true : false);
       setUserId(user.id);
+
       if (user.is_admin !== 1) {
         try {
           const p: Profile = await getProfile(user.id);
@@ -138,6 +147,7 @@ export default function ProfileScreen() {
           // blank form is fine for new users
         }
       }
+
       setLoading(false);
     })();
   }, []);
@@ -232,7 +242,7 @@ export default function ProfileScreen() {
     </View>
   );
 
-  if (loading) {
+  if (loading || isMember === null) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color="#f59e0b" />
@@ -295,6 +305,7 @@ export default function ProfileScreen() {
                 <Text style={styles.saveBtnText}>Save Changes</Text>
               )}
             </TouchableOpacity>
+
             <TouchableOpacity
               style={styles.cancelBtn}
               onPress={() => setEditing(false)}
@@ -303,13 +314,25 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </>
         ) : (
-          <TouchableOpacity
-            style={styles.editBtnRow}
-            onPress={() => setEditing(true)}
-          >
-            <Ionicons name="pencil-outline" size={16} color="#f59e0b" />
-            <Text style={styles.editBtnText}>Edit Profile</Text>
-          </TouchableOpacity>
+          <>
+            <TouchableOpacity
+              style={styles.editBtnRow}
+              onPress={() => setEditing(true)}
+            >
+              <Ionicons name="pencil-outline" size={16} color="#f59e0b" />
+              <Text style={styles.editBtnText}>Edit Profile</Text>
+            </TouchableOpacity>
+
+            {!isMember && (
+              <TouchableOpacity
+                style={styles.upgradeBtnRow}
+                onPress={() => router.push("/membership")}
+              >
+                <Ionicons name="card-outline" size={16} color="#fff" />
+                <Text style={styles.upgradeBtnText}>Upgrade Membership</Text>
+              </TouchableOpacity>
+            )}
+          </>
         )}
       </View>
 
@@ -524,6 +547,21 @@ const styles = StyleSheet.create({
   },
   editBtnText: {
     color: "#f59e0b",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  upgradeBtnRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    backgroundColor: "#f59e0b",
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  upgradeBtnText: {
+    color: "#fff",
     fontWeight: "600",
     fontSize: 14,
   },
