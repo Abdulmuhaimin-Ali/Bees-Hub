@@ -1,18 +1,28 @@
-import type { Profile } from "@/hooks/SignInApi";
-import { getProfile, saveProfile } from "@/hooks/SignInApi";
-import { clearStoredUser, getStoredUser } from "@/hooks/userStore";
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
   View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  TextInput,
+  ActivityIndicator,
+  Image,
 } from "react-native";
+import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
+import { clearStoredUser, getStoredUser } from "@/hooks/userStore";
+import {
+  getProfile,
+  saveProfile,
+  getUserPhotos,
+  uploadPhoto,
+  deletePhoto,
+  setMainPhoto,
+  getPhotoUrl,
+} from "@/hooks/SignInApi";
+import type { Profile, UserPhoto } from "@/hooks/SignInApi";
 
 const INTERESTS = [
   "Hiking",
@@ -60,6 +70,8 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [userPhotos, setUserPhotos] = useState<UserPhoto[]>([]);
+  const [mainPhotoUrl, setMainPhotoUrl] = useState<string | null>(null);
 
   const [profile, setProfile] = useState({
     firstName: "",
@@ -146,6 +158,15 @@ export default function ProfileScreen() {
         } catch {
           // blank form is fine for new users
         }
+
+        try {
+          const photos = await getUserPhotos(user.id);
+          setUserPhotos(photos);
+          const main = photos.find((ph) => ph.is_main === 1) ?? photos[0];
+          if (main) setMainPhotoUrl(getPhotoUrl(main.photo_url));
+        } catch {
+          // no photos yet is fine
+        }
       }
 
       setLoading(false);
@@ -200,6 +221,60 @@ export default function ProfileScreen() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const refreshPhotos = async () => {
+    try {
+      const photos = await getUserPhotos(userId);
+      setUserPhotos(photos);
+      const main = photos.find((ph) => ph.is_main === 1) ?? photos[0];
+      setMainPhotoUrl(main ? getPhotoUrl(main.photo_url) : null);
+    } catch {
+      // ignore
+    }
+  };
+
+  const pickAndUploadPhoto = async (): Promise<void> => {
+    const { status } =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: "images",
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (!result.canceled && result.assets.length > 0) {
+      await uploadPhoto(userId, result.assets[0].uri);
+      await refreshPhotos();
+    }
+  };
+
+  const handleChangeMainPhoto = async () => {
+    const { status } =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: "images",
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (!result.canceled && result.assets.length > 0) {
+      const newPhoto = await uploadPhoto(userId, result.assets[0].uri);
+      await setMainPhoto(userId, newPhoto.id);
+      await refreshPhotos();
+    }
+  };
+
+  const handleDeletePhoto = async (photoId: string) => {
+    await deletePhoto(userId, photoId);
+    await refreshPhotos();
+  };
+
+  const handleSetMain = async (photoId: string) => {
+    await setMainPhoto(userId, photoId);
+    await refreshPhotos();
   };
 
   const toggleInterest = (item: string) => {
@@ -273,10 +348,22 @@ export default function ProfileScreen() {
     <ScrollView style={styles.page} contentContainerStyle={styles.content}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {initials(profile.firstName, profile.lastName)}
-          </Text>
+        <View style={styles.avatarContainer}>
+          <View style={styles.avatar}>
+            {mainPhotoUrl ? (
+              <Image source={{ uri: mainPhotoUrl }} style={styles.avatarImage} />
+            ) : (
+              <Text style={styles.avatarText}>
+                {initials(profile.firstName, profile.lastName)}
+              </Text>
+            )}
+          </View>
+          <TouchableOpacity
+            style={styles.cameraOverlay}
+            onPress={handleChangeMainPhoto}
+          >
+            <Ionicons name="camera" size={16} color="#fff" />
+          </TouchableOpacity>
         </View>
         <Text style={styles.profileName}>
           {profile.firstName || profile.lastName
@@ -352,6 +439,52 @@ export default function ProfileScreen() {
         ) : (
           <Text style={styles.bioText}>{profile.bio || "No bio yet."}</Text>
         )}
+      </View>
+
+      {/* Photos */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Photos</Text>
+        <View style={styles.photoGrid}>
+          {userPhotos.map((photo) => (
+            <View key={photo.id} style={styles.photoSlot}>
+              <Image
+                source={{ uri: getPhotoUrl(photo.photo_url) }}
+                style={styles.photoImage}
+              />
+              {photo.is_main === 1 && (
+                <View style={styles.mainBadge}>
+                  <Text style={styles.mainBadgeText}>Main</Text>
+                </View>
+              )}
+              {editing && (
+                <>
+                  {photo.is_main !== 1 && (
+                    <TouchableOpacity
+                      style={styles.setMainBtn}
+                      onPress={() => handleSetMain(photo.id)}
+                    >
+                      <Ionicons name="star-outline" size={14} color="#fff" />
+                    </TouchableOpacity>
+                  )}
+                  <TouchableOpacity
+                    style={styles.deletePhotoBtn}
+                    onPress={() => handleDeletePhoto(photo.id)}
+                  >
+                    <Ionicons name="close-circle" size={20} color="#ef4444" />
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
+          ))}
+          {editing && userPhotos.length < 6 && (
+            <TouchableOpacity
+              style={[styles.photoSlot, styles.photoSlotAdd]}
+              onPress={pickAndUploadPhoto}
+            >
+              <Text style={styles.photoPlus}>+</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* Personal Details */}
@@ -506,6 +639,10 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
   },
+  avatarContainer: {
+    position: "relative",
+    marginBottom: 10,
+  },
   avatar: {
     width: 78,
     height: 78,
@@ -513,12 +650,87 @@ const styles = StyleSheet.create({
     backgroundColor: "#fef3c7",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 10,
+    overflow: "hidden",
+  },
+  avatarImage: {
+    width: 78,
+    height: 78,
+    borderRadius: 39,
   },
   avatarText: {
     fontSize: 28,
     fontWeight: "bold",
     color: "#d97706",
+  },
+  cameraOverlay: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    backgroundColor: "#f59e0b",
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  photoGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 4,
+  },
+  photoSlot: {
+    width: 90,
+    height: 90,
+    borderRadius: 10,
+    overflow: "hidden",
+    position: "relative",
+  },
+  photoSlotAdd: {
+    borderWidth: 1.5,
+    borderColor: "#d1d5db",
+    borderStyle: "dashed",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f9fafb",
+  },
+  photoImage: {
+    width: 90,
+    height: 90,
+  },
+  photoPlus: {
+    fontSize: 24,
+    color: "#9ca3af",
+  },
+  mainBadge: {
+    position: "absolute",
+    bottom: 4,
+    left: 4,
+    backgroundColor: "#f59e0b",
+    borderRadius: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+  },
+  mainBadgeText: {
+    fontSize: 9,
+    color: "#fff",
+    fontWeight: "700",
+  },
+  setMainBtn: {
+    position: "absolute",
+    bottom: 4,
+    right: 4,
+    backgroundColor: "#6b7280",
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  deletePhotoBtn: {
+    position: "absolute",
+    top: 2,
+    right: 2,
   },
   profileName: {
     fontSize: 22,
