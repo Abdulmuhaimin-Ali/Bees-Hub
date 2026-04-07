@@ -8,6 +8,7 @@ import {
   TextInput,
   ActivityIndicator,
   Image,
+  Modal,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -72,6 +73,7 @@ export default function ProfileScreen() {
   const [editing, setEditing] = useState(false);
   const [userPhotos, setUserPhotos] = useState<UserPhoto[]>([]);
   const [mainPhotoUrl, setMainPhotoUrl] = useState<string | null>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<UserPhoto | null>(null);
 
   const [profile, setProfile] = useState({
     firstName: "",
@@ -250,7 +252,8 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleReplacePhoto = async (photoId: string): Promise<void> => {
+  
+    setSelectedPhoto(null);
     const { status } =
       await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") return;
@@ -287,12 +290,12 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleDeletePhoto = async (photoId: string) => {
+      setSelectedPhoto(null);
     await deletePhoto(userId, photoId);
     await refreshPhotos();
   };
 
-  const handleSetMain = async (photoId: string) => {
+      setSelectedPhoto(null);
     await setMainPhoto(userId, photoId);
     await refreshPhotos();
   };
@@ -469,8 +472,8 @@ export default function ProfileScreen() {
             <TouchableOpacity
               key={photo.id}
               style={styles.photoSlot}
-              onPress={() => handleReplacePhoto(photo.id)}
-              activeOpacity={0.85}
+              onPress={() => editing && setSelectedPhoto(photo)}
+              activeOpacity={editing ? 0.75 : 1}
             >
               <Image
                 source={{ uri: getPhotoUrl(photo.photo_url) }}
@@ -478,26 +481,12 @@ export default function ProfileScreen() {
               />
               {photo.is_main === 1 && (
                 <View style={styles.mainBadge}>
-                  <Text style={styles.mainBadgeText}>Main</Text>
+                  <Ionicons name="star" size={12} color="#fff" />
                 </View>
               )}
-              {photo.is_main !== 1 && (
-                <TouchableOpacity
-                  style={styles.setMainBtn}
-                  onPress={() => handleSetMain(photo.id)}
-                >
-                  <Ionicons name="star-outline" size={14} color="#fff" />
-                </TouchableOpacity>
-              )}
-              <TouchableOpacity
-                style={styles.deletePhotoBtn}
-                onPress={() => handleDeletePhoto(photo.id)}
-              >
-                <Ionicons name="close-circle" size={20} color="#ef4444" />
-              </TouchableOpacity>
             </TouchableOpacity>
           ))}
-          {userPhotos.length < 6 && (
+          {editing && userPhotos.length < 6 && (
             <TouchableOpacity
               style={[styles.photoSlot, styles.photoSlotAdd]}
               onPress={pickAndUploadPhoto}
@@ -507,6 +496,53 @@ export default function ProfileScreen() {
           )}
         </View>
       </View>
+
+      {/* Photo action modal */}
+      <Modal
+        visible={selectedPhoto !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectedPhoto(null)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setSelectedPhoto(null)}
+        >
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>Edit Photo</Text>
+            <TouchableOpacity
+              style={styles.modalOption}
+              onPress={() => selectedPhoto && handleReplacePhoto(selectedPhoto.id)}
+            >
+              <Ionicons name="image-outline" size={20} color="#1f2937" />
+              <Text style={styles.modalOptionText}>Change photo</Text>
+            </TouchableOpacity>
+            {selectedPhoto?.is_main !== 1 && (
+              <TouchableOpacity
+                style={styles.modalOption}
+                onPress={() => selectedPhoto && handleSetMain(selectedPhoto.id)}
+              >
+                <Ionicons name="star-outline" size={20} color="#f59e0b" />
+                <Text style={[styles.modalOptionText, { color: "#f59e0b" }]}>Set as main photo</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={styles.modalOption}
+              onPress={() => selectedPhoto && handleDeletePhoto(selectedPhoto.id)}
+            >
+              <Ionicons name="trash-outline" size={20} color="#ef4444" />
+              <Text style={[styles.modalOptionText, { color: "#ef4444" }]}>Delete photo</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.modalCancel}
+              onPress={() => setSelectedPhoto(null)}
+            >
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       {/* Personal Details */}
       <View style={styles.section}>
@@ -729,30 +765,52 @@ const styles = StyleSheet.create({
     bottom: 4,
     left: 4,
     backgroundColor: "#f59e0b",
-    borderRadius: 4,
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-  },
-  mainBadgeText: {
-    fontSize: 9,
-    color: "#fff",
-    fontWeight: "700",
-  },
-  setMainBtn: {
-    position: "absolute",
-    bottom: 4,
-    right: 4,
-    backgroundColor: "#6b7280",
     borderRadius: 10,
     width: 20,
     height: 20,
     alignItems: "center",
     justifyContent: "center",
   },
-  deletePhotoBtn: {
-    position: "absolute",
-    top: 2,
-    right: 2,
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "flex-end",
+  },
+  modalBox: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 24,
+    paddingBottom: 36,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1f2937",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  modalOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f3f4f6",
+  },
+  modalOptionText: {
+    fontSize: 15,
+    color: "#1f2937",
+    fontWeight: "500",
+  },
+  modalCancel: {
+    marginTop: 16,
+    alignItems: "center",
+  },
+  modalCancelText: {
+    fontSize: 15,
+    color: "#6b7280",
+    fontWeight: "600",
   },
   profileName: {
     fontSize: 22,
