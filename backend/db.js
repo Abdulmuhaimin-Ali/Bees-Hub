@@ -141,6 +141,16 @@ function initSchema() {
       FOREIGN KEY(date_id) REFERENCES dates(id),
       FOREIGN KEY(user_id) REFERENCES users(id)
     );
+
+    CREATE TABLE IF NOT EXISTS user_photos (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      photo_url TEXT NOT NULL,
+      is_main INTEGER DEFAULT 0,
+      position INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY(user_id) REFERENCES users(id)
+    );
   `);
   ensureUserColumns();
   ensureProfileColumns();
