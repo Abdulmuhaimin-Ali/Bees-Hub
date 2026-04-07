@@ -1129,7 +1129,7 @@ const styles = StyleSheet.create({
   chipSelected: { borderColor: "#f59e0b", backgroundColor: "#fde68a" },
   chipText: { fontSize: 13, color: "#374151" },
   chipTextSelected: { color: "#b45309", fontWeight: "600" },
-  photoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 8 },
+  photoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 8, justifyContent: "center" },
   photoSlot: {
     width: 90,
     height: 90,

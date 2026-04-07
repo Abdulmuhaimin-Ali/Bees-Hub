@@ -250,6 +250,26 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleReplacePhoto = async (photoId: string): Promise<void> => {
+    const { status } =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: "images",
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (!result.canceled && result.assets.length > 0) {
+      const wasMain =
+        userPhotos.find((p) => p.id === photoId)?.is_main === 1;
+      const newPhoto = await uploadPhoto(userId, result.assets[0].uri);
+      if (wasMain) await setMainPhoto(userId, newPhoto.id);
+      await deletePhoto(userId, photoId);
+      await refreshPhotos();
+    }
+  };
+
   const handleChangeMainPhoto = async () => {
     const { status } =
       await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -446,7 +466,12 @@ export default function ProfileScreen() {
         <Text style={styles.sectionTitle}>Photos</Text>
         <View style={styles.photoGrid}>
           {userPhotos.map((photo) => (
-            <View key={photo.id} style={styles.photoSlot}>
+            <TouchableOpacity
+              key={photo.id}
+              style={styles.photoSlot}
+              onPress={() => handleReplacePhoto(photo.id)}
+              activeOpacity={0.85}
+            >
               <Image
                 source={{ uri: getPhotoUrl(photo.photo_url) }}
                 style={styles.photoImage}
@@ -456,27 +481,23 @@ export default function ProfileScreen() {
                   <Text style={styles.mainBadgeText}>Main</Text>
                 </View>
               )}
-              {editing && (
-                <>
-                  {photo.is_main !== 1 && (
-                    <TouchableOpacity
-                      style={styles.setMainBtn}
-                      onPress={() => handleSetMain(photo.id)}
-                    >
-                      <Ionicons name="star-outline" size={14} color="#fff" />
-                    </TouchableOpacity>
-                  )}
-                  <TouchableOpacity
-                    style={styles.deletePhotoBtn}
-                    onPress={() => handleDeletePhoto(photo.id)}
-                  >
-                    <Ionicons name="close-circle" size={20} color="#ef4444" />
-                  </TouchableOpacity>
-                </>
+              {photo.is_main !== 1 && (
+                <TouchableOpacity
+                  style={styles.setMainBtn}
+                  onPress={() => handleSetMain(photo.id)}
+                >
+                  <Ionicons name="star-outline" size={14} color="#fff" />
+                </TouchableOpacity>
               )}
-            </View>
+              <TouchableOpacity
+                style={styles.deletePhotoBtn}
+                onPress={() => handleDeletePhoto(photo.id)}
+              >
+                <Ionicons name="close-circle" size={20} color="#ef4444" />
+              </TouchableOpacity>
+            </TouchableOpacity>
           ))}
-          {editing && userPhotos.length < 6 && (
+          {userPhotos.length < 6 && (
             <TouchableOpacity
               style={[styles.photoSlot, styles.photoSlotAdd]}
               onPress={pickAndUploadPhoto}
@@ -678,6 +699,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 8,
     marginTop: 4,
+    justifyContent: "center",
   },
   photoSlot: {
     width: 90,
