@@ -252,7 +252,7 @@ export default function ProfileScreen() {
     }
   };
 
-  
+  const handleReplacePhoto = async (photoId: string): Promise<void> => {
     setSelectedPhoto(null);
     const { status } =
       await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -290,12 +290,14 @@ export default function ProfileScreen() {
     }
   };
 
-      setSelectedPhoto(null);
+  const handleDeletePhoto = async (photoId: string) => {
+    setSelectedPhoto(null);
     await deletePhoto(userId, photoId);
     await refreshPhotos();
   };
 
-      setSelectedPhoto(null);
+  const handleSetMain = async (photoId: string) => {
+    setSelectedPhoto(null);
     await setMainPhoto(userId, photoId);
     await refreshPhotos();
   };
