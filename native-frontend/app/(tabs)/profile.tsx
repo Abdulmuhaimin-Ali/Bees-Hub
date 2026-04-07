@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Image,
   Modal,
+  Alert,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -237,69 +238,76 @@ export default function ProfileScreen() {
   };
 
   const pickAndUploadPhoto = async (): Promise<void> => {
+    const uri = await openPicker();
+    if (!uri) return;
+    try {
+      await uploadPhoto(userId, uri);
+      await refreshPhotos();
+    } catch {
+      Alert.alert("Upload failed", "Could not save the photo, please try again.");
+    }
+  };
+
+  const openPicker = async (): Promise<string | null> => {
     const { status } =
       await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") return;
+    if (status !== "granted") return null;
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: "images",
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.7,
     });
-    if (!result.canceled && result.assets.length > 0) {
-      await uploadPhoto(userId, result.assets[0].uri);
-      await refreshPhotos();
-    }
+    return result.canceled ? null : result.assets[0].uri;
   };
 
   const handleReplacePhoto = async (photoId: string): Promise<void> => {
     setSelectedPhoto(null);
-    const { status } =
-      await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") return;
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: "images",
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.7,
-    });
-    if (!result.canceled && result.assets.length > 0) {
-      const wasMain =
-        userPhotos.find((p) => p.id === photoId)?.is_main === 1;
-      const newPhoto = await uploadPhoto(userId, result.assets[0].uri);
+    await new Promise((r) => setTimeout(r, 350));
+    const uri = await openPicker();
+    if (!uri) return;
+    try {
+      const wasMain = userPhotos.find((p) => p.id === photoId)?.is_main === 1;
+      const newPhoto = await uploadPhoto(userId, uri);
       if (wasMain) await setMainPhoto(userId, newPhoto.id);
       await deletePhoto(userId, photoId);
       await refreshPhotos();
+    } catch {
+      Alert.alert("Upload failed", "Could not save the photo, please try again.");
     }
   };
 
   const handleChangeMainPhoto = async () => {
-    const { status } =
-      await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") return;
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: "images",
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.7,
-    });
-    if (!result.canceled && result.assets.length > 0) {
-      const newPhoto = await uploadPhoto(userId, result.assets[0].uri);
+    await new Promise((r) => setTimeout(r, 350));
+    const uri = await openPicker();
+    if (!uri) return;
+    try {
+      const newPhoto = await uploadPhoto(userId, uri);
       await setMainPhoto(userId, newPhoto.id);
       await refreshPhotos();
+    } catch {
+      Alert.alert("Upload failed", "Could not save the photo, please try again.");
     }
   };
 
   const handleDeletePhoto = async (photoId: string) => {
     setSelectedPhoto(null);
-    await deletePhoto(userId, photoId);
-    await refreshPhotos();
+    try {
+      await deletePhoto(userId, photoId);
+      await refreshPhotos();
+    } catch {
+      Alert.alert("Error", "Could not delete the photo. Try again.");
+    }
   };
 
   const handleSetMain = async (photoId: string) => {
     setSelectedPhoto(null);
-    await setMainPhoto(userId, photoId);
-    await refreshPhotos();
+    try {
+      await setMainPhoto(userId, photoId);
+      await refreshPhotos();
+    } catch {
+      Alert.alert("Error", "Could not update the main photo. Try again.");
+    }
   };
 
   const toggleInterest = (item: string) => {
