@@ -83,6 +83,18 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="membership"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+      name="checkout"
+      options={{
+        href: null,
+      }}
+/>
     </Tabs>
   );
 }
