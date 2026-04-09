@@ -1,18 +1,30 @@
-import type { Profile } from "@/hooks/SignInApi";
-import { getProfile, saveProfile } from "@/hooks/SignInApi";
-import { clearStoredUser, getStoredUser } from "@/hooks/userStore";
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
   View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  TextInput,
+  ActivityIndicator,
+  Image,
+  Modal,
+  Alert,
 } from "react-native";
+import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
+import { clearStoredUser, getStoredUser } from "@/hooks/userStore";
+import {
+  getProfile,
+  saveProfile,
+  getUserPhotos,
+  uploadPhoto,
+  deletePhoto,
+  setMainPhoto,
+  getPhotoUrl,
+} from "@/hooks/SignInApi";
+import type { Profile, UserPhoto } from "@/hooks/SignInApi";
 
 const INTERESTS = [
   "Hiking",
@@ -60,6 +72,9 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [userPhotos, setUserPhotos] = useState<UserPhoto[]>([]);
+  const [mainPhotoUrl, setMainPhotoUrl] = useState<string | null>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<UserPhoto | null>(null);
 
   const [profile, setProfile] = useState({
     firstName: "",
@@ -146,6 +161,15 @@ export default function ProfileScreen() {
         } catch {
           // blank form is fine for new users
         }
+
+        try {
+          const photos = await getUserPhotos(user.id);
+          setUserPhotos(photos);
+          const main = photos.find((ph) => ph.is_main === 1) ?? photos[0];
+          if (main) setMainPhotoUrl(getPhotoUrl(main.photo_url));
+        } catch {
+          // no photos yet is fine
+        }
       }
 
       setLoading(false);
@@ -199,6 +223,90 @@ export default function ProfileScreen() {
       console.error("Save failed", e);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const refreshPhotos = async () => {
+    try {
+      const photos = await getUserPhotos(userId);
+      setUserPhotos(photos);
+      const main = photos.find((ph) => ph.is_main === 1) ?? photos[0];
+      setMainPhotoUrl(main ? getPhotoUrl(main.photo_url) : null);
+    } catch {
+      // ignore
+    }
+  };
+
+  const pickAndUploadPhoto = async (): Promise<void> => {
+    const uri = await openPicker();
+    if (!uri) return;
+    try {
+      await uploadPhoto(userId, uri);
+      await refreshPhotos();
+    } catch {
+      Alert.alert("Upload failed", "Could not save the photo, please try again.");
+    }
+  };
+
+  const openPicker = async (): Promise<string | null> => {
+    const { status } =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") return null;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: "images",
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    return result.canceled ? null : result.assets[0].uri;
+  };
+
+  const handleReplacePhoto = async (photoId: string): Promise<void> => {
+    setSelectedPhoto(null);
+    await new Promise((r) => setTimeout(r, 350));
+    const uri = await openPicker();
+    if (!uri) return;
+    try {
+      const wasMain = userPhotos.find((p) => p.id === photoId)?.is_main === 1;
+      const newPhoto = await uploadPhoto(userId, uri);
+      if (wasMain) await setMainPhoto(userId, newPhoto.id);
+      await deletePhoto(userId, photoId);
+      await refreshPhotos();
+    } catch {
+      Alert.alert("Upload failed", "Could not save the photo, please try again.");
+    }
+  };
+
+  const handleChangeMainPhoto = async () => {
+    await new Promise((r) => setTimeout(r, 350));
+    const uri = await openPicker();
+    if (!uri) return;
+    try {
+      const newPhoto = await uploadPhoto(userId, uri);
+      await setMainPhoto(userId, newPhoto.id);
+      await refreshPhotos();
+    } catch {
+      Alert.alert("Upload failed", "Could not save the photo, please try again.");
+    }
+  };
+
+  const handleDeletePhoto = async (photoId: string) => {
+    setSelectedPhoto(null);
+    try {
+      await deletePhoto(userId, photoId);
+      await refreshPhotos();
+    } catch {
+      Alert.alert("Error", "Could not delete the photo. Try again.");
+    }
+  };
+
+  const handleSetMain = async (photoId: string) => {
+    setSelectedPhoto(null);
+    try {
+      await setMainPhoto(userId, photoId);
+      await refreshPhotos();
+    } catch {
+      Alert.alert("Error", "Could not update the main photo. Try again.");
     }
   };
 
@@ -273,10 +381,22 @@ export default function ProfileScreen() {
     <ScrollView style={styles.page} contentContainerStyle={styles.content}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {initials(profile.firstName, profile.lastName)}
-          </Text>
+        <View style={styles.avatarContainer}>
+          <View style={styles.avatar}>
+            {mainPhotoUrl ? (
+              <Image source={{ uri: mainPhotoUrl }} style={styles.avatarImage} />
+            ) : (
+              <Text style={styles.avatarText}>
+                {initials(profile.firstName, profile.lastName)}
+              </Text>
+            )}
+          </View>
+          <TouchableOpacity
+            style={styles.cameraOverlay}
+            onPress={handleChangeMainPhoto}
+          >
+            <Ionicons name="camera" size={16} color="#fff" />
+          </TouchableOpacity>
         </View>
         <Text style={styles.profileName}>
           {profile.firstName || profile.lastName
@@ -353,6 +473,86 @@ export default function ProfileScreen() {
           <Text style={styles.bioText}>{profile.bio || "No bio yet."}</Text>
         )}
       </View>
+
+      {/* Photos */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Photos</Text>
+        <View style={styles.photoGrid}>
+          {userPhotos.map((photo) => (
+            <TouchableOpacity
+              key={photo.id}
+              style={styles.photoSlot}
+              onPress={() => editing && setSelectedPhoto(photo)}
+              activeOpacity={editing ? 0.75 : 1}
+            >
+              <Image
+                source={{ uri: getPhotoUrl(photo.photo_url) }}
+                style={styles.photoImage}
+              />
+              {photo.is_main === 1 && (
+                <View style={styles.mainBadge}>
+                  <Ionicons name="star" size={12} color="#fff" />
+                </View>
+              )}
+            </TouchableOpacity>
+          ))}
+          {editing && userPhotos.length < 6 && (
+            <TouchableOpacity
+              style={[styles.photoSlot, styles.photoSlotAdd]}
+              onPress={pickAndUploadPhoto}
+            >
+              <Text style={styles.photoPlus}>+</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
+      {/* Photo action modal */}
+      <Modal
+        visible={selectedPhoto !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectedPhoto(null)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setSelectedPhoto(null)}
+        >
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>Edit Photo</Text>
+            <TouchableOpacity
+              style={styles.modalOption}
+              onPress={() => selectedPhoto && handleReplacePhoto(selectedPhoto.id)}
+            >
+              <Ionicons name="image-outline" size={20} color="#1f2937" />
+              <Text style={styles.modalOptionText}>Change photo</Text>
+            </TouchableOpacity>
+            {selectedPhoto?.is_main !== 1 && (
+              <TouchableOpacity
+                style={styles.modalOption}
+                onPress={() => selectedPhoto && handleSetMain(selectedPhoto.id)}
+              >
+                <Ionicons name="star-outline" size={20} color="#f59e0b" />
+                <Text style={[styles.modalOptionText, { color: "#f59e0b" }]}>Set as main photo</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={styles.modalOption}
+              onPress={() => selectedPhoto && handleDeletePhoto(selectedPhoto.id)}
+            >
+              <Ionicons name="trash-outline" size={20} color="#ef4444" />
+              <Text style={[styles.modalOptionText, { color: "#ef4444" }]}>Delete photo</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.modalCancel}
+              onPress={() => setSelectedPhoto(null)}
+            >
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       {/* Personal Details */}
       <View style={styles.section}>
@@ -506,6 +706,10 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
   },
+  avatarContainer: {
+    position: "relative",
+    marginBottom: 10,
+  },
   avatar: {
     width: 78,
     height: 78,
@@ -513,12 +717,110 @@ const styles = StyleSheet.create({
     backgroundColor: "#fef3c7",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 10,
+    overflow: "hidden",
+  },
+  avatarImage: {
+    width: 78,
+    height: 78,
+    borderRadius: 39,
   },
   avatarText: {
     fontSize: 28,
     fontWeight: "bold",
     color: "#d97706",
+  },
+  cameraOverlay: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    backgroundColor: "#f59e0b",
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  photoGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 4,
+    justifyContent: "center",
+  },
+  photoSlot: {
+    width: 90,
+    height: 90,
+    borderRadius: 10,
+    overflow: "hidden",
+    position: "relative",
+  },
+  photoSlotAdd: {
+    borderWidth: 1.5,
+    borderColor: "#d1d5db",
+    borderStyle: "dashed",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f9fafb",
+  },
+  photoImage: {
+    width: 90,
+    height: 90,
+  },
+  photoPlus: {
+    fontSize: 24,
+    color: "#9ca3af",
+  },
+  mainBadge: {
+    position: "absolute",
+    bottom: 4,
+    left: 4,
+    backgroundColor: "#f59e0b",
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "flex-end",
+  },
+  modalBox: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 24,
+    paddingBottom: 36,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1f2937",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  modalOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f3f4f6",
+  },
+  modalOptionText: {
+    fontSize: 15,
+    color: "#1f2937",
+    fontWeight: "500",
+  },
+  modalCancel: {
+    marginTop: 16,
+    alignItems: "center",
+  },
+  modalCancelText: {
+    fontSize: 15,
+    color: "#6b7280",
+    fontWeight: "600",
   },
   profileName: {
     fontSize: 22,
