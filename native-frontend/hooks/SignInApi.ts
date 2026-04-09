@@ -150,7 +150,6 @@ export interface Profile {
   height_cm?: number;
   weight_kg?: number;
   bio?: string;
-  photo_url?: string;
   job_title?: string;
   work_type?: string;
   employer?: string;
@@ -165,20 +164,6 @@ export interface Profile {
   preferred_age_max?: number;
   relationship_type?: string;
   interests?: string;
-}
-
-export interface UserPhoto {
-  id: string;
-  user_id: string;
-  photo_url: string;
-  is_main: number;
-  position: number;
-  created_at: string;
-}
-
-export function getPhotoUrl(relativePath: string): string {
-  const host = BASE_URL.replace("/api", "");
-  return `${host}${relativePath}`;
 }
 
 export async function getAllProfiles(): Promise<Profile[]> {
@@ -211,61 +196,6 @@ export async function saveProfile(
   );
   if (!res.ok) throw new Error("Failed to save profile");
   return res.json();
-}
-
-// Photos
-
-export async function getUserPhotos(userId: string): Promise<UserPhoto[]> {
-  const res = await fetch(
-    `${BASE_URL}/profiles/${encodeURIComponent(userId)}/photos`,
-    { credentials: "include" },
-  );
-  if (!res.ok) throw new Error("Failed to fetch photos");
-  return res.json();
-}
-
-export async function uploadPhoto(
-  userId: string,
-  fileUri: string,
-): Promise<UserPhoto> {
-  const formData = new FormData();
-  const filename = fileUri.split("/").pop() || "photo.jpg";
-  const match = /\.(\w+)$/.exec(filename);
-  const type = match ? `image/${match[1]}` : "image/jpeg";
-  formData.append("photo", { uri: fileUri, name: filename, type } as any);
-
-  const res = await fetch(
-    `${BASE_URL}/profiles/${encodeURIComponent(userId)}/photos`,
-    {
-      method: "POST",
-      body: formData,
-      credentials: "include",
-    },
-  );
-  if (!res.ok) throw new Error("Failed to upload photo");
-  return res.json();
-}
-
-export async function deletePhoto(
-  userId: string,
-  photoId: string,
-): Promise<void> {
-  const res = await fetch(
-    `${BASE_URL}/profiles/${encodeURIComponent(userId)}/photos/${encodeURIComponent(photoId)}`,
-    { method: "DELETE", credentials: "include" },
-  );
-  if (!res.ok) throw new Error("Failed to delete photo");
-}
-
-export async function setMainPhoto(
-  userId: string,
-  photoId: string,
-): Promise<void> {
-  const res = await fetch(
-    `${BASE_URL}/profiles/${encodeURIComponent(userId)}/photos/${encodeURIComponent(photoId)}/main`,
-    { method: "PUT", credentials: "include" },
-  );
-  if (!res.ok) throw new Error("Failed to set main photo");
 }
 
 // Matches

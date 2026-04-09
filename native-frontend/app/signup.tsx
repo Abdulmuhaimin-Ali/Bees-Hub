@@ -10,13 +10,11 @@ import {
   Platform,
   Modal,
   FlatList,
-  Image,
 } from "react-native";
 import { router, Link } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
 import { storeUser } from "../hooks/userStore";
-import { register, saveProfile, uploadPhoto } from "../hooks/SignInApi";
+import { register, saveProfile } from "../hooks/SignInApi";
 
 const INTERESTS = [
   "Hiking",
@@ -195,7 +193,6 @@ export default function SignUpScreen() {
     dealBreakers: "",
   });
   const [error, setError] = useState<string | null>(null);
-  const [photos, setPhotos] = useState<string[]>([]);
 
   // Helper: check if string is a number
   const isNumber = (val: string) => /^\d+(\.\d+)?$/.test(val.trim());
@@ -385,11 +382,6 @@ export default function SignUpScreen() {
       // 3. Save profile
       await saveProfile(user.id, profileData);
 
-      // 4. Upload selected photos
-      for (const uri of photos.filter(Boolean)) {
-        await uploadPhoto(user.id, uri);
-      }
-
       router.replace("/(tabs)/discover");
     } catch {
       // Optionally show error to user
@@ -399,37 +391,6 @@ export default function SignUpScreen() {
 
   const openPicker = (field: string, options: string[], title: string) =>
     setPicker({ field, options, title });
-
-  const pickPhoto = async (slotIndex: number) => {
-    const { status } =
-      await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      setError("Permission to access photos is required.");
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: "images",
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.7,
-    });
-    if (!result.canceled && result.assets.length > 0) {
-      const uri = result.assets[0].uri;
-      setPhotos((prev) => {
-        const updated = [...prev];
-        updated[slotIndex] = uri;
-        return updated;
-      });
-    }
-  };
-
-  const removePhoto = (slotIndex: number) => {
-    setPhotos((prev) => {
-      const updated = [...prev];
-      updated.splice(slotIndex, 1);
-      return updated;
-    });
-  };
 
   return (
     <KeyboardAvoidingView
@@ -947,48 +908,14 @@ export default function SignUpScreen() {
             <View>
               <Text style={styles.stepTitle}>Add Photos</Text>
               <Text style={styles.stepDesc}>
-                Add photos to complete your profile. The first slot is your
-                main photo.
+                Add at least 2 photos to complete your profile
               </Text>
               <View style={styles.photoGrid}>
                 {[0, 1, 2, 3, 4, 5].map((i) => (
-                  <TouchableOpacity
-                    key={i}
-                    style={styles.photoSlot}
-                    onPress={() => pickPhoto(i)}
-                    activeOpacity={0.8}
-                  >
-                    {photos[i] ? (
-                      <>
-                        <Image
-                          source={{ uri: photos[i] }}
-                          style={styles.photoImage}
-                        />
-                        {i === 0 && (
-                          <View style={styles.mainBadge}>
-                            <Text style={styles.mainBadgeText}>Main</Text>
-                          </View>
-                        )}
-                        <TouchableOpacity
-                          style={styles.photoRemoveBtn}
-                          onPress={() => removePhoto(i)}
-                        >
-                          <Ionicons
-                            name="close-circle"
-                            size={20}
-                            color="#ef4444"
-                          />
-                        </TouchableOpacity>
-                      </>
-                    ) : (
-                      <>
-                        <Text style={styles.photoPlus}>+</Text>
-                        {i === 0 && (
-                          <Text style={styles.photoLabel}>Main</Text>
-                        )}
-                      </>
-                    )}
-                  </TouchableOpacity>
+                  <View key={i} style={styles.photoSlot}>
+                    <Text style={styles.photoPlus}>+</Text>
+                    {i === 0 && <Text style={styles.photoLabel}>Main</Text>}
+                  </View>
                 ))}
               </View>
             </View>
@@ -1129,7 +1056,7 @@ const styles = StyleSheet.create({
   chipSelected: { borderColor: "#f59e0b", backgroundColor: "#fde68a" },
   chipText: { fontSize: 13, color: "#374151" },
   chipTextSelected: { color: "#b45309", fontWeight: "600" },
-  photoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 8, justifyContent: "center" },
+  photoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 8 },
   photoSlot: {
     width: 90,
     height: 90,
@@ -1140,31 +1067,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#f9fafb",
-    overflow: "hidden",
-    position: "relative",
-  },
-  photoImage: {
-    width: 90,
-    height: 90,
-    borderRadius: 10,
   },
   photoPlus: { fontSize: 24, color: "#9ca3af" },
   photoLabel: { fontSize: 11, color: "#9ca3af", marginTop: 2 },
-  mainBadge: {
-    position: "absolute",
-    bottom: 4,
-    left: 4,
-    backgroundColor: "#f59e0b",
-    borderRadius: 4,
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-  },
-  mainBadgeText: { fontSize: 9, color: "#fff", fontWeight: "700" },
-  photoRemoveBtn: {
-    position: "absolute",
-    top: 2,
-    right: 2,
-  },
   actions: {
     flexDirection: "row",
     justifyContent: "flex-end",

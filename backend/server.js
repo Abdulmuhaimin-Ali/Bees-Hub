@@ -5,13 +5,9 @@ import "dotenv/config";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import path from "path";
 import fs from "fs";
-import { fileURLToPath } from "url";
 import { v4 as uuidv4 } from "uuid";
 import { getDb, run, get, all } from "./db.js";
 import { error } from "console";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // routes
 import router from "./profile.js";
@@ -71,7 +67,6 @@ app.use(
   }),
 );
 app.use(express.json());
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use(express.urlencoded());
 app.use(
