@@ -1,4 +1,4 @@
-import { getProfile, type Profile } from "@/hooks/SignInApi";
+import { getProfile, subscribe, type Profile } from "@/hooks/SignInApi";
 import { getStoredUser } from "@/hooks/userStore";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -70,7 +70,7 @@ export default function CheckoutScreen() {
     })();
   }, []);
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (
       !paymentInfo.cardName.trim() ||
       !paymentInfo.cardNumber.trim() ||
@@ -81,16 +81,16 @@ export default function CheckoutScreen() {
       return;
     }
 
-    Alert.alert(
-      "Payment Successful",
-      "Your BeesHub Premium membership has been activated.",
-      [
-        {
-          text: "OK",
-          onPress: () => router.replace("/profile"),
-        },
-      ],
-    );
+    try {
+      await subscribe();
+      Alert.alert(
+        "Payment Successful",
+        "Your BeesHub Premium membership has been activated.",
+        [{ text: "OK", onPress: () => router.replace("/profile") }],
+      );
+    } catch (e: any) {
+      Alert.alert("Payment Failed", e.message || "Something went wrong.");
+    }
   };
 
   if (loading) {
@@ -217,7 +217,7 @@ export default function CheckoutScreen() {
         </View>
 
         <Text style={styles.smallNote}>
-          This is a demo checkout page for the membership flow.
+          This is a demo.
         </Text>
       </View>
 
