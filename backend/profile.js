@@ -1,16 +1,24 @@
 import express from "express";
-import * as db from "./db.js";
-const router = express.Router();
 import path from "path";
+import fs from "fs";
 import multer from "multer";
+import { fileURLToPath } from "url";
 import { v4 as uuidv4 } from "uuid";
 import { run, get, all } from "./db.js";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const uploadsDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, path.join(__dirname, "./uploads")),
+  destination: (req, file, cb) => cb(null, uploadsDir),
   filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
 });
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+
+const router = express.Router();
 
 // Get all profiles
 router.get("/", async (req, res) => {
@@ -135,20 +143,124 @@ router.post("/:userId", async (req, res) => {
   }
 });
 
-// Upload photo
-router.post("/:userId/photo", upload.single("photo"), async (req, res) => {
+// Get all photos for a user
+router.get("/:userId/photos", async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const photos = await all(
+      "SELECT * FROM user_photos WHERE user_id = ? ORDER BY position ASC",
+      [userId],
+    );
+    res.json(photos);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Upload a photo for a user
+router.post("/:userId/photos", upload.single("photo"), async (req, res) => {
   const { userId } = req.params;
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
   try {
     const photoUrl = `/uploads/${req.file.filename}`;
-    const existing = await db.get("SELECT id FROM profiles WHERE user_id = ?");
-    if (existing) {
-      await db.get("UPDATE profiles SET photo_url = ? WHERE user_id = ?");
-    } else {
-      await db.get("INSERT INTO profiles (user_id, photo_url) VALUES (?, ?)");
+
+    // Determine the next position
+    const last = await get(
+      "SELECT MAX(position) as maxPos FROM user_photos WHERE user_id = ?",
+      [userId],
+    );
+    const position = last && last.maxPos !== null ? last.maxPos + 1 : 0;
+    const isMain = position === 0 ? 1 : 0;
+    const photoId = uuidv4();
+
+    await run(
+      "INSERT INTO user_photos (id, user_id, photo_url, is_main, position) VALUES (?, ?, ?, ?, ?)",
+      [photoId, userId, photoUrl, isMain, position],
+    );
+
+    // Keep profiles.photo_url in sync with the main photo
+    if (isMain) {
+      const existingProfile = await get(
+        "SELECT id FROM profiles WHERE user_id = ?",
+        [userId],
+      );
+      if (existingProfile) {
+        await run("UPDATE profiles SET photo_url = ? WHERE user_id = ?", [
+          photoUrl,
+          userId,
+        ]);
+      }
     }
-    res.json({ photo_url: photoUrl });
+
+    const photo = await get("SELECT * FROM user_photos WHERE id = ?", [
+      photoId,
+    ]);
+    res.json(photo);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete a photo
+router.delete("/:userId/photos/:photoId", async (req, res) => {
+  const { userId, photoId } = req.params;
+  try {
+    const photo = await get(
+      "SELECT * FROM user_photos WHERE id = ? AND user_id = ?",
+      [photoId, userId],
+    );
+    if (!photo) return res.status(404).json({ error: "Photo not found" });
+
+    await run("DELETE FROM user_photos WHERE id = ?", [photoId]);
+
+    // Delete the file from disk
+    const filePath = path.join(__dirname, photo.photo_url);
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
+    // If deleted photo was main, promote the next one
+    if (photo.is_main) {
+      const next = await get(
+        "SELECT * FROM user_photos WHERE user_id = ? ORDER BY position ASC LIMIT 1",
+        [userId],
+      );
+      if (next) {
+        await run("UPDATE user_photos SET is_main = 1 WHERE id = ?", [next.id]);
+        await run("UPDATE profiles SET photo_url = ? WHERE user_id = ?", [
+          next.photo_url,
+          userId,
+        ]);
+      } else {
+        await run("UPDATE profiles SET photo_url = NULL WHERE user_id = ?", [
+          userId,
+        ]);
+      }
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Set a photo as main
+router.put("/:userId/photos/:photoId/main", async (req, res) => {
+  const { userId, photoId } = req.params;
+  try {
+    const photo = await get(
+      "SELECT * FROM user_photos WHERE id = ? AND user_id = ?",
+      [photoId, userId],
+    );
+    if (!photo) return res.status(404).json({ error: "Photo not found" });
+
+    await run("UPDATE user_photos SET is_main = 0 WHERE user_id = ?", [userId]);
+    await run("UPDATE user_photos SET is_main = 1 WHERE id = ?", [photoId]);
+    await run("UPDATE profiles SET photo_url = ? WHERE user_id = ?", [
+      photo.photo_url,
+      userId,
+    ]);
+
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
