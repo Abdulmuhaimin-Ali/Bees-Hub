@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -85,10 +84,6 @@ interface MatchEntry {
   interests: string[];
 }
 
-function getMatchRatingsKey(userId: string) {
-  return `beeshub_match_quality_ratings_${userId}`;
-}
-
 function profileToMatch(p: Profile, index: number): [string, MatchEntry] {
   const name = [p.first_name, p.last_name].filter(Boolean).join(" ") || p.email;
   const initials =
@@ -106,9 +101,7 @@ function profileToMatch(p: Profile, index: number): [string, MatchEntry] {
 export default function ActivitiesScreen() {
   const router = useRouter();
   const [isPaid, setIsPaid] = useState<boolean | null>(null);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [matchRatings, setMatchRatings] = useState<Record<string, number>>({});
-  const [matches, setMatches] = useState<Record<string, MatchEntry>>({});
+const [matches, setMatches] = useState<Record<string, MatchEntry>>({});
   const [loadingMatches, setLoadingMatches] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activitiesMap, setActivitiesMap] = useState<
@@ -121,15 +114,6 @@ export default function ActivitiesScreen() {
       setIsPaid(u?.is_member === 1 ? true : false);
       if (!u?.id) return;
 
-      setCurrentUserId(u.id);
-      const rawRatings = await AsyncStorage.getItem(getMatchRatingsKey(u.id));
-      if (!rawRatings) return;
-
-      try {
-        setMatchRatings(JSON.parse(rawRatings) as Record<string, number>);
-      } catch (err) {
-        console.error("Failed to parse saved match ratings:", err);
-      }
     });
   }, []);
 
@@ -158,19 +142,6 @@ export default function ActivitiesScreen() {
       )
       .catch((err) => console.error("Failed to fetch activities:", err))
       .finally(() => setLoadingActivities(false));
-  };
-
-  const handleRateMatch = (matchId: string, rating: number) => {
-    setMatchRatings((prev) => {
-      const next = { ...prev, [matchId]: rating };
-      if (currentUserId) {
-        AsyncStorage.setItem(
-          getMatchRatingsKey(currentUserId),
-          JSON.stringify(next),
-        ).catch((err) => console.error("Failed to save match rating:", err));
-      }
-      return next;
-    });
   };
 
   const matchIds = Object.keys(matches);
@@ -284,36 +255,18 @@ export default function ActivitiesScreen() {
               ))}
             </View>
           )}
-          <View style={styles.matchQualityRating}>
-            <Text style={styles.matchQualityTitle}>
-              How good is this match for you?
-            </Text>
-            <View style={styles.matchQualityStars}>
-              {Array.from({ length: 5 }, (_, i) => {
-                const value = i + 1;
-                const currentRating = matchRatings[selectedId] ?? 0;
-                const isActive = currentRating >= value;
-                return (
-                  <TouchableOpacity
-                    key={value}
-                    style={styles.matchQualityStarBtn}
-                    onPress={() => handleRateMatch(selectedId, value)}
-                  >
-                    <Ionicons
-                      name={isActive ? "star" : "star-outline"}
-                      size={18}
-                      color={isActive ? "#f59e0b" : "#d1d5db"}
-                    />
-                  </TouchableOpacity>
-                );
-              })}
-              <Text style={styles.matchQualityValue}>
-                {(matchRatings[selectedId] ?? 0) > 0
-                  ? `${matchRatings[selectedId]} / 5`
-                  : "Not rated"}
-              </Text>
-            </View>
-          </View>
+          <TouchableOpacity
+            style={styles.rateDateButton}
+            onPress={() =>
+              router.push({
+                pathname: "/date-survey",
+                params: { matchName: selectedMatch.name },
+              })
+            }
+          >
+            <Ionicons name="star-outline" size={18} color="#fff" />
+            <Text style={styles.rateDateButtonText}>Rate your date</Text>
+          </TouchableOpacity>
           {loadingActivities ? (
             <ActivityIndicator color="#f59e0b" style={{ marginTop: 16 }} />
           ) : activities.length === 0 ? (
@@ -414,40 +367,24 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   selectedMatchText: { fontSize: 13, color: "#374151" },
-  matchQualityRating: {
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#fde68a",
-    borderRadius: 10,
-    padding: 10,
-    marginBottom: 12,
-  },
-  matchQualityTitle: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#92400e",
-    marginBottom: 6,
-  },
-  matchQualityStars: {
+  rateDateButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-  },
-  matchQualityStarBtn: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    borderWidth: 1,
-    borderColor: "#fde68a",
-    alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#fff",
+    gap: 8,
+    backgroundColor: "#f59e0b",
+    borderRadius: 12,
+    paddingVertical: 12,
+    marginBottom: 12,
+    shadowColor: "#f59e0b",
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
   },
-  matchQualityValue: {
-    marginLeft: 4,
-    fontSize: 12,
-    color: "#6b7280",
-    fontWeight: "600",
+  rateDateButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "700",
   },
   sharedInterests: {
     flexDirection: "row",
