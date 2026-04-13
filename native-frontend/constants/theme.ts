@@ -1,12 +1,7 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
-
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+const tintColorLight = '#f59e0b';
+const tintColorDark = '#fbbf24';
 
 export const Colors = {
   light: {
@@ -27,15 +22,58 @@ export const Colors = {
   },
 };
 
+export const AppColors = {
+  light: {
+    page: '#f9fafb',
+    card: '#ffffff',
+    textPrimary: '#1f2937',
+    textSecondary: '#6b7280',
+    textMuted: '#9ca3af',
+    border: '#d1d5db',
+    borderLight: '#f3f4f6',
+    inputBg: '#f3f4f6',
+    accent: '#f59e0b',
+    accentDark: '#d97706',
+    accentLight: '#fef3c7',
+    accentText: '#d97706',
+    danger: '#ef4444',
+    dangerLight: '#fecaca',
+    tabBar: '#ffffff',
+    tabBorder: '#eeeeee',
+    avatarBg: '#fef3c7',
+    signupPage: '#fde68a',
+    shadow: '#000000',
+  },
+  dark: {
+    page: '#0f172a',
+    card: '#1e293b',
+    textPrimary: '#f1f5f9',
+    textSecondary: '#94a3b8',
+    textMuted: '#64748b',
+    border: '#334155',
+    borderLight: '#1e293b',
+    inputBg: '#334155',
+    accent: '#f59e0b',
+    accentDark: '#fbbf24',
+    accentLight: '#1c1400',
+    accentText: '#fbbf24',
+    danger: '#ef4444',
+    dangerLight: '#450a0a',
+    tabBar: '#1e293b',
+    tabBorder: '#334155',
+    avatarBg: '#1c1400',
+    signupPage: '#1e293b',
+    shadow: '#000000',
+  },
+};
+
+export type AppColorScheme = typeof AppColors.light;
+
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
   default: {
