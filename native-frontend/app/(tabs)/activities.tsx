@@ -101,7 +101,7 @@ function profileToMatch(p: Profile, index: number): [string, MatchEntry] {
 export default function ActivitiesScreen() {
   const router = useRouter();
   const [isPaid, setIsPaid] = useState<boolean | null>(null);
-  const [matches, setMatches] = useState<Record<string, MatchEntry>>({});
+const [matches, setMatches] = useState<Record<string, MatchEntry>>({});
   const [loadingMatches, setLoadingMatches] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activitiesMap, setActivitiesMap] = useState<
@@ -110,7 +110,11 @@ export default function ActivitiesScreen() {
   const [loadingActivities, setLoadingActivities] = useState(false);
 
   useEffect(() => {
-    getStoredUser().then((u) => setIsPaid(u?.is_member === 1 ? true : false));
+    getStoredUser().then(async (u) => {
+      setIsPaid(u?.is_member === 1 ? true : false);
+      if (!u?.id) return;
+
+    });
   }, []);
 
   useEffect(() => {
@@ -159,14 +163,16 @@ export default function ActivitiesScreen() {
         <Text style={styles.paywallBee}>🐝</Text>
         <Text style={styles.paywallTitle}>Members Only</Text>
         <Text style={styles.paywallSubtitle}>
-          This hive is exclusive to paid members.{"\n"}We're sorry — the Matches
-          tab is reserved for those who've joined the colony.
+          This hive is exclusive to paid members.{"\n"}We are sorry - the
+          Matches tab is reserved for those who have joined the colony.
         </Text>
         <View style={styles.paywallDivider} />
         <Text style={styles.paywallPerks}>✨ Unlock with a membership:</Text>
         <View style={styles.paywallPerksList}>
           <Text style={styles.paywallPerk}>💛 View all your matches</Text>
-          <Text style={styles.paywallPerk}>📍 Get curated date activity ideas</Text>
+          <Text style={styles.paywallPerk}>
+            📍 Get curated date activity ideas
+          </Text>
           <Text style={styles.paywallPerk}>🔓 Full access to contact info</Text>
         </View>
         <TouchableOpacity
@@ -231,7 +237,7 @@ export default function ActivitiesScreen() {
         )}
       </View>
 
-      {selectedMatch && (
+      {selectedMatch && selectedId && (
         <View>
           <View style={styles.selectedMatchHeader}>
             <Ionicons name="people" size={15} color="#374151" />
@@ -249,6 +255,18 @@ export default function ActivitiesScreen() {
               ))}
             </View>
           )}
+          <TouchableOpacity
+            style={styles.rateDateButton}
+            onPress={() =>
+              router.push({
+                pathname: "/date-survey",
+                params: { matchName: selectedMatch.name },
+              })
+            }
+          >
+            <Ionicons name="star-outline" size={18} color="#fff" />
+            <Text style={styles.rateDateButtonText}>Rate your date</Text>
+          </TouchableOpacity>
           {loadingActivities ? (
             <ActivityIndicator color="#f59e0b" style={{ marginTop: 16 }} />
           ) : activities.length === 0 ? (
@@ -349,6 +367,25 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   selectedMatchText: { fontSize: 13, color: "#374151" },
+  rateDateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#f59e0b",
+    borderRadius: 12,
+    paddingVertical: 12,
+    marginBottom: 12,
+    shadowColor: "#f59e0b",
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  rateDateButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "700",
+  },
   sharedInterests: {
     flexDirection: "row",
     flexWrap: "wrap",
