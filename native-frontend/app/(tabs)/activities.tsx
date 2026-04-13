@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -84,6 +85,10 @@ interface MatchEntry {
   interests: string[];
 }
 
+function getMatchRatingsKey(userId: string) {
+  return `beeshub_match_quality_ratings_${userId}`;
+}
+
 function profileToMatch(p: Profile, index: number): [string, MatchEntry] {
   const name = [p.first_name, p.last_name].filter(Boolean).join(" ") || p.email;
   const initials =
@@ -101,6 +106,8 @@ function profileToMatch(p: Profile, index: number): [string, MatchEntry] {
 export default function ActivitiesScreen() {
   const router = useRouter();
   const [isPaid, setIsPaid] = useState<boolean | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [matchRatings, setMatchRatings] = useState<Record<string, number>>({});
   const [matches, setMatches] = useState<Record<string, MatchEntry>>({});
   const [loadingMatches, setLoadingMatches] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -110,7 +117,20 @@ export default function ActivitiesScreen() {
   const [loadingActivities, setLoadingActivities] = useState(false);
 
   useEffect(() => {
-    getStoredUser().then((u) => setIsPaid(u?.is_member === 1 ? true : false));
+    getStoredUser().then(async (u) => {
+      setIsPaid(u?.is_member === 1 ? true : false);
+      if (!u?.id) return;
+
+      setCurrentUserId(u.id);
+      const rawRatings = await AsyncStorage.getItem(getMatchRatingsKey(u.id));
+      if (!rawRatings) return;
+
+      try {
+        setMatchRatings(JSON.parse(rawRatings) as Record<string, number>);
+      } catch (err) {
+        console.error("Failed to parse saved match ratings:", err);
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -140,6 +160,19 @@ export default function ActivitiesScreen() {
       .finally(() => setLoadingActivities(false));
   };
 
+  const handleRateMatch = (matchId: string, rating: number) => {
+    setMatchRatings((prev) => {
+      const next = { ...prev, [matchId]: rating };
+      if (currentUserId) {
+        AsyncStorage.setItem(
+          getMatchRatingsKey(currentUserId),
+          JSON.stringify(next),
+        ).catch((err) => console.error("Failed to save match rating:", err));
+      }
+      return next;
+    });
+  };
+
   const matchIds = Object.keys(matches);
   const selectedMatch = selectedId ? matches[selectedId] : null;
   const activities = selectedId ? (activitiesMap[selectedId] ?? []) : [];
@@ -159,14 +192,16 @@ export default function ActivitiesScreen() {
         <Text style={styles.paywallBee}>🐝</Text>
         <Text style={styles.paywallTitle}>Members Only</Text>
         <Text style={styles.paywallSubtitle}>
-          This hive is exclusive to paid members.{"\n"}We're sorry — the Matches
-          tab is reserved for those who've joined the colony.
+          This hive is exclusive to paid members.{"\n"}We are sorry - the
+          Matches tab is reserved for those who have joined the colony.
         </Text>
         <View style={styles.paywallDivider} />
         <Text style={styles.paywallPerks}>✨ Unlock with a membership:</Text>
         <View style={styles.paywallPerksList}>
           <Text style={styles.paywallPerk}>💛 View all your matches</Text>
-          <Text style={styles.paywallPerk}>📍 Get curated date activity ideas</Text>
+          <Text style={styles.paywallPerk}>
+            📍 Get curated date activity ideas
+          </Text>
           <Text style={styles.paywallPerk}>🔓 Full access to contact info</Text>
         </View>
         <TouchableOpacity
@@ -231,7 +266,7 @@ export default function ActivitiesScreen() {
         )}
       </View>
 
-      {selectedMatch && (
+      {selectedMatch && selectedId && (
         <View>
           <View style={styles.selectedMatchHeader}>
             <Ionicons name="people" size={15} color="#374151" />
@@ -249,6 +284,36 @@ export default function ActivitiesScreen() {
               ))}
             </View>
           )}
+          <View style={styles.matchQualityRating}>
+            <Text style={styles.matchQualityTitle}>
+              How good is this match for you?
+            </Text>
+            <View style={styles.matchQualityStars}>
+              {Array.from({ length: 5 }, (_, i) => {
+                const value = i + 1;
+                const currentRating = matchRatings[selectedId] ?? 0;
+                const isActive = currentRating >= value;
+                return (
+                  <TouchableOpacity
+                    key={value}
+                    style={styles.matchQualityStarBtn}
+                    onPress={() => handleRateMatch(selectedId, value)}
+                  >
+                    <Ionicons
+                      name={isActive ? "star" : "star-outline"}
+                      size={18}
+                      color={isActive ? "#f59e0b" : "#d1d5db"}
+                    />
+                  </TouchableOpacity>
+                );
+              })}
+              <Text style={styles.matchQualityValue}>
+                {(matchRatings[selectedId] ?? 0) > 0
+                  ? `${matchRatings[selectedId]} / 5`
+                  : "Not rated"}
+              </Text>
+            </View>
+          </View>
           {loadingActivities ? (
             <ActivityIndicator color="#f59e0b" style={{ marginTop: 16 }} />
           ) : activities.length === 0 ? (
@@ -349,6 +414,41 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   selectedMatchText: { fontSize: 13, color: "#374151" },
+  matchQualityRating: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#fde68a",
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 12,
+  },
+  matchQualityTitle: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#92400e",
+    marginBottom: 6,
+  },
+  matchQualityStars: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  matchQualityStarBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 1,
+    borderColor: "#fde68a",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff",
+  },
+  matchQualityValue: {
+    marginLeft: 4,
+    fontSize: 12,
+    color: "#6b7280",
+    fontWeight: "600",
+  },
   sharedInterests: {
     flexDirection: "row",
     flexWrap: "wrap",
