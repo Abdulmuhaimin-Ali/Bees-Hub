@@ -4,15 +4,13 @@ import { ActivityIndicator, View } from "react-native";
 
 import { HapticTab } from "@/components/haptic-tab";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { useAppTheme } from "@/hooks/useAppTheme";
 import { getStoredUser, type StoredUser } from "@/hooks/userStore";
-
-// BeesHub yellow for active tab
-const beesHubActive = "#fbbf24";
-const beesHubInactive = "#999";
 
 export default function TabLayout() {
   const [user, setUser] = useState<StoredUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const colors = useAppTheme();
 
   useEffect(() => {
     getStoredUser()
@@ -22,8 +20,8 @@ export default function TabLayout() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator size="large" color="#fbbf24" />
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.page }}>
+        <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
   }
@@ -31,14 +29,14 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: beesHubActive,
-        tabBarInactiveTintColor: beesHubInactive,
+        tabBarActiveTintColor: colors.accent,
+        tabBarInactiveTintColor: colors.textMuted,
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarStyle: {
-          backgroundColor: "#fff",
-          borderTopColor: "#eee",
-          shadowColor: "#000",
+          backgroundColor: colors.tabBar,
+          borderTopColor: colors.tabBorder,
+          shadowColor: colors.shadow,
           shadowOpacity: 0.05,
           shadowOffset: { height: -2, width: 0 },
         },

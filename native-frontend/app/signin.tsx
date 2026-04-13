@@ -13,12 +13,16 @@ import { router, Link } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { login } from "../hooks/SignInApi";
 import { storeUser } from "../hooks/userStore";
+import { useAppTheme } from "../hooks/useAppTheme";
+import type { AppColorScheme } from "../constants/theme";
 
 export default function SignInScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const colors = useAppTheme();
+  const styles = makeStyles(colors);
 
   const handleSignIn = async () => {
     setError("");
@@ -52,7 +56,7 @@ export default function SignInScreen() {
             <TextInput
               style={styles.input}
               placeholder="john@example.com"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={colors.textMuted}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -64,7 +68,7 @@ export default function SignInScreen() {
               <TextInput
                 style={styles.passwordInput}
                 placeholder="Enter your password"
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor={colors.textMuted}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -77,7 +81,7 @@ export default function SignInScreen() {
                 <Ionicons
                   name={showPassword ? "eye-off" : "eye"}
                   size={18}
-                  color="#6b7280"
+                  color={colors.textSecondary}
                 />
               </TouchableOpacity>
             </View>
@@ -102,102 +106,104 @@ export default function SignInScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  page: {
-    flex: 1,
-    backgroundColor: "#fde68a",
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-    padding: 24,
-  },
-  container: {
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    padding: 28,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-  },
-  header: {
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  logo: {
-    fontSize: 40,
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#1f2937",
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: "#6b7280",
-  },
-  form: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#374151",
-    marginBottom: 6,
-    marginTop: 12,
-  },
-  input: {
-    backgroundColor: "#f3f4f6",
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 15,
-    color: "#1f2937",
-  },
-  passwordRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f3f4f6",
-    borderRadius: 10,
-  },
-  passwordInput: {
-    flex: 1,
-    padding: 12,
-    fontSize: 15,
-    color: "#1f2937",
-  },
-  eyeBtn: {
-    padding: 12,
-  },
-  errorText: {
-    color: "red",
-    fontSize: 13,
-    marginTop: 8,
-  },
-  btnSignin: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#f59e0b",
-    borderRadius: 10,
-    paddingVertical: 14,
-    marginTop: 20,
-    gap: 8,
-  },
-  btnSigninText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  signupLink: {
-    textAlign: "center",
-    fontSize: 14,
-    color: "#6b7280",
-  },
-  linkText: {
-    color: "#f59e0b",
-    fontWeight: "600",
-  },
-});
+function makeStyles(c: AppColorScheme) {
+  return StyleSheet.create({
+    page: {
+      flex: 1,
+      backgroundColor: c.signupPage,
+    },
+    scrollContent: {
+      flexGrow: 1,
+      justifyContent: "center",
+      padding: 24,
+    },
+    container: {
+      backgroundColor: c.card,
+      borderRadius: 20,
+      padding: 28,
+      shadowColor: c.shadow,
+      shadowOpacity: 0.1,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 4 },
+    },
+    header: {
+      alignItems: "center",
+      marginBottom: 24,
+    },
+    logo: {
+      fontSize: 40,
+      marginBottom: 8,
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: "bold",
+      color: c.textPrimary,
+      marginBottom: 4,
+    },
+    subtitle: {
+      fontSize: 14,
+      color: c.textSecondary,
+    },
+    form: {
+      marginBottom: 20,
+    },
+    label: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: c.textPrimary,
+      marginBottom: 6,
+      marginTop: 12,
+    },
+    input: {
+      backgroundColor: c.inputBg,
+      borderRadius: 10,
+      padding: 12,
+      fontSize: 15,
+      color: c.textPrimary,
+    },
+    passwordRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: c.inputBg,
+      borderRadius: 10,
+    },
+    passwordInput: {
+      flex: 1,
+      padding: 12,
+      fontSize: 15,
+      color: c.textPrimary,
+    },
+    eyeBtn: {
+      padding: 12,
+    },
+    errorText: {
+      color: c.danger,
+      fontSize: 13,
+      marginTop: 8,
+    },
+    btnSignin: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: c.accent,
+      borderRadius: 10,
+      paddingVertical: 14,
+      marginTop: 20,
+      gap: 8,
+    },
+    btnSigninText: {
+      color: "#fff",
+      fontSize: 16,
+      fontWeight: "bold",
+    },
+    signupLink: {
+      textAlign: "center",
+      fontSize: 14,
+      color: c.textSecondary,
+    },
+    linkText: {
+      color: c.accent,
+      fontWeight: "600",
+    },
+  });
+}
